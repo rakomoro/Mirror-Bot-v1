@@ -6,7 +6,7 @@
 - **اسم البوت:** Mirror Bot
 - **الوظيفة:** بوت ماسنجر
 
-## معلومات المطورين
+## معلومات المطور
 - **صلاح الدين (Hakim Tracks)**
   - [حساب فيسبوك](fb.com/Hakim.Tracks.Ch)
 
@@ -22,3 +22,4 @@
 | Facebook | 
 | :---: | 
 | <a href="https://www.facebook.com/Hakim.Tracks.Ch"><img src="https://i.postimg.cc/fyLsTW4T/qr-code-(2).png" /></a>
+
