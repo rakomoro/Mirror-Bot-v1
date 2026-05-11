@@ -1,6 +1,6 @@
 # Mirror Bot 
 
-![Mirror Bot Agent](https://imgur.com/a/KT3OGfu)
+![Mirror Bot Agent](https://i.imgur.com/aAO58sQ.jpeg)
 
 ## معلومات البوت
 - **اسم البوت:** Mirror Bot
