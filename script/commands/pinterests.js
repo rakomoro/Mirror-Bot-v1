@@ -25,7 +25,7 @@ module.exports.HakimRun = async ({ api, event, args }) => {
     const countInput = queryAndLength[1];
     const displayCount = countInput ? Math.min(parseInt(countInput), 20) : 6;
 
-    if (!keySearch) return api.sendMessage('❌ يرجى إدخال كلمة البحث', threadID, messageID);
+    if (!keySearch) return api.sendMessage('✘ يرجى إدخال كلمة البحث', threadID, messageID);
 
     const cacheDir = path.join(__dirname, 'cache');
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
@@ -42,19 +42,17 @@ module.exports.HakimRun = async ({ api, event, args }) => {
 
         let allImages = response.data.images;
         if (!allImages || allImages.length === 0) {
-            api.setMessageReaction('❌', messageID, () => {}, true);
-            return api.sendMessage('❌ لا توجد صور', threadID, messageID);
+            api.setMessageReaction('✘', messageID, () => {}, true);
+            return api.sendMessage('✘ لا توجد صور', threadID, messageID);
         }
 
-        
         const imageSet = new Set(allImages);
         allImages = Array.from(imageSet);
 
-        
         const imagesToShow = allImages.slice(0, displayCount);
         if (imagesToShow.length === 0) {
-            api.setMessageReaction('❌', messageID, () => {}, true);
-            return api.sendMessage('❌ لا توجد صور كافية للعرض', threadID, messageID);
+            api.setMessageReaction('✘', messageID, () => {}, true);
+            return api.sendMessage('✘ لا توجد صور كافية للعرض', threadID, messageID);
         }
 
         const attachments = [];
@@ -65,7 +63,7 @@ module.exports.HakimRun = async ({ api, event, args }) => {
             attachments.push(fs.createReadStream(imgPath));
         }
 
-        const msg = `✅ تم العثور على ${allImages.length} صورة لـ "${keySearch}".\nعرض ${imagesToShow.length} منها.\nرد بـ "المزيد" لجلب صور إضافية.`;
+        const msg = `✔ تم العثور على ${allImages.length} صورة لـ "${keySearch}"\nعرض ${imagesToShow.length} منها\nتفاعل بـ 👍 لجلب المزيد`;
 
         api.sendMessage({
             body: msg,
@@ -77,7 +75,8 @@ module.exports.HakimRun = async ({ api, event, args }) => {
                 if (fs.existsSync(att.path)) fs.unlinkSync(att.path);
             }
             
-            Mirror.client.HakimReply.push({
+           
+            Mirror.client.HakimReaction.push({
                 name: module.exports.config.title,
                 messageID: info.messageID,
                 author: event.senderID,
@@ -90,20 +89,24 @@ module.exports.HakimRun = async ({ api, event, args }) => {
             });
         }, messageID);
     } catch (err) {
-        api.setMessageReaction('❌', messageID, () => {}, true);
-        api.sendMessage('❌ خطأ: ' + err.message, threadID, messageID);
+        api.setMessageReaction('✘', messageID, () => {}, true);
+        api.sendMessage('✘ خطأ: ' + err.message, threadID, messageID);
     }
 };
 
-module.exports.HakimReply = async ({ api, event, HakimReply }) => {
-    const { threadID, messageID, senderID, body } = event;
-    if (HakimReply.type !== 'more') return;
-    if (senderID !== HakimReply.author) return api.sendMessage('❌ أنت لست صاحب البحث', threadID, messageID);
+module.exports.HakimReaction = async ({ api, event, HakimReaction }) => {
+    const { threadID, messageID, userID, reaction } = event;
+         
+    if (reaction !== '👍') return;
+      
+    if (userID !== HakimReaction.author) {
+        return api.sendMessage('✘ أنت لست صاحب البحث', threadID, messageID);
+    }
+    
+   
+    if (HakimReaction.type !== 'more') return;
 
-    const input = body.trim().toLowerCase();
-    if (!['المزيد', 'زيد', 'more'].includes(input)) return;
-
-    const { keyword, allImages, startIndex, displayCount } = HakimReply;
+    const { keyword, allImages, startIndex, displayCount } = HakimReaction;
     const cacheDir = path.join(__dirname, 'cache');
 
     api.setMessageReaction('⏳', messageID, () => {}, true);
@@ -112,7 +115,7 @@ module.exports.HakimReply = async ({ api, event, HakimReply }) => {
         let updatedImages = allImages;
         let newStartIndex = startIndex;
 
-        
+       
         if (startIndex >= allImages.length) {
             const apiUrl = await baseApiUrl();
             const limit = 30;
@@ -121,21 +124,20 @@ module.exports.HakimReply = async ({ api, event, HakimReply }) => {
             );
             const newImages = response.data.images || [];
             if (newImages.length === 0) {
-                api.setMessageReaction('❌', messageID, () => {}, true);
-                return api.sendMessage('❌ لا توجد صور إضافية.', threadID, messageID);
+                api.setMessageReaction('✘', messageID, () => {}, true);
+                return api.sendMessage('✘ لا توجد صور إضافية', threadID, messageID);
             }
 
-            
             const combinedSet = new Set([...allImages, ...newImages]);
             updatedImages = Array.from(combinedSet);
-            newStartIndex = allImages.length; 
+            newStartIndex = allImages.length;
         }
 
-        
+       
         const nextBatch = updatedImages.slice(newStartIndex, newStartIndex + displayCount);
         if (nextBatch.length === 0) {
-            api.setMessageReaction('❌', messageID, () => {}, true);
-            return api.sendMessage('❌ لا توجد صور إضافية.', threadID, messageID);
+            api.setMessageReaction('✘', messageID, () => {}, true);
+            return api.sendMessage('✘ لا توجد صور إضافية', threadID, messageID);
         }
 
         
@@ -149,7 +151,7 @@ module.exports.HakimReply = async ({ api, event, HakimReply }) => {
 
         const totalImages = updatedImages.length;
         const shownSoFar = newStartIndex + nextBatch.length;
-        const msg = `✅ صور إضافية لـ "${keyword}" (${shownSoFar}/${totalImages} صورة).\nرد بـ "المزيد" لجلب المزيد.`;
+        const msg = `✔ صور إضافية لـ "${keyword}" (${shownSoFar}/${totalImages} صورة)\nتفاعل بـ 👍 لجلب المزيد`;
 
         api.sendMessage({
             body: msg,
@@ -161,18 +163,19 @@ module.exports.HakimReply = async ({ api, event, HakimReply }) => {
                 if (fs.existsSync(att.path)) fs.unlinkSync(att.path);
             }
             
-            const index = Mirror.client.HakimReply.findIndex(h => h.messageID === HakimReply.messageID);
+           
+            const index = Mirror.client.HakimReaction.findIndex(h => h.messageID === HakimReaction.messageID);
             if (index !== -1) {
-                Mirror.client.HakimReply[index] = {
-                    ...HakimReply,
-                    messageID: info.messageID, 
+                Mirror.client.HakimReaction[index] = {
+                    ...HakimReaction,
+                    messageID: info.messageID,
                     allImages: updatedImages,
                     startIndex: newStartIndex + displayCount,
                 };
             }
         }, messageID);
     } catch (err) {
-        api.setMessageReaction('❌', messageID, () => {}, true);
-        api.sendMessage('❌ خطأ: ' + err.message, threadID, messageID);
+        api.setMessageReaction('✘', messageID, () => {}, true);
+        api.sendMessage('✘ خطأ: ' + err.message, threadID, messageID);
     }
 };
