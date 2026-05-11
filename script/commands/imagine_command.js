@@ -6,14 +6,14 @@ let isProcessing = false;
 const cooldowns = new Map();
 
 module.exports.config = {
-    title: "imagine_command",
-    release: "1.0.0",
+    title: "تخيلي",
+    release: "1.2.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "رسم صورة من نص باستخدام الذكاء الاصطناعي باستخدام نماذج متعددة.",
+    section: "زكـــــــاء",
+    syntax: "تخيل [النص] | [رقم الموديل (1-3)]\nمثال: تخيل قط يرتدي قبعة ساحر | 1",
+    delay: 30,
 };
 
 module.exports.HakimRun = async ({ api, event, args }) => {

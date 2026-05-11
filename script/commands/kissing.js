@@ -1,12 +1,12 @@
 module.exports.config = {
-    title: "kissing",
+    title: "ازالة",
     release: "1.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "يزيل جميع الأدمنات في المجموعة ما عدا المطور والبوت",
+    section: "الــمـطـور",
     syntax: "",
-    delay: 3,
+    delay: 5,
 };
 
 module.exports.HakimRun = async function({ api, event}) {

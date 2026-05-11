@@ -3,14 +3,14 @@ const fs = require("fs-extra");
 const path = require("path");
 
 module.exports.config = {
-    title: "معلوماتي",
-    release: "1.0.0",
+    title: "معلومات",
+    release: "3.2",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "جلب بيانات أي مستخدم داخل المجموعة بدقة",
+    section: "عـــامـة",
+    syntax: "[معلوماتي] أو [معلوماتي @منشن أو رد]",
+    delay: 5,
 };
 
 

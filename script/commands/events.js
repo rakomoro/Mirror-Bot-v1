@@ -4,14 +4,14 @@ const path = require('path');
 const { createCanvas, loadImage } = require('canvas'); 
 
 module.exports.config = {
-    title: "events",
-    release: "1.0.0",
-    clearance: 0,
+    title: "احداث",
+    release: "2.1.0",
+    clearance: 1,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "إرسال رسالة ترحيب مع صورة عند انضمام عضو جديد، وإشعارات للأحداث الأخرى.",
+    section: "الــمـطـور",
+    syntax: "on/off",
+    delay: 5,
 };
 
 

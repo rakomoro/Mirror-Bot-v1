@@ -8,14 +8,14 @@ const baseApiUrl = async () => {
 };
 
 module.exports.config = {
-    title: "edit",
-    release: "1.0.0",
+    title: 'تعديل',
+    release: '1.7',
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: 'تعديل صورة باستخدام وصف نصي (الرد على الصورة مع التعليمات)',
+    section: 'زكـــــــاء',
+    syntax: '[وصف التعديل] (مع الرد على صورة)',
+    delay: 10,
 };
 
 module.exports.HakimRun = async ({ api, event, args }) => {

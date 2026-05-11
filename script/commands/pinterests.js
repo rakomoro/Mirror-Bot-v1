@@ -8,14 +8,14 @@ const baseApiUrl = async () => {
 };
 
 module.exports.config = {
-    title: "pinterests",
-    release: "1.0.0",
+    title: 'بنترست',
+    release: '2.0',
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: 'بحث وتحميل صور من Pinterest مع إمكانية جلب المزيد',
+    section: 'عـــامـة',
+    syntax: '[كلمة بحث] - [عدد] (مثال: goku - 10)',
+    delay: 10,
 };
 
 module.exports.HakimRun = async ({ api, event, args }) => {

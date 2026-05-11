@@ -5,13 +5,13 @@
 
 module.exports.config = {
     title: "اضافة",
-    release: "1.0.0",
-    clearance: 0,
+    release: "2.4.3",
+    clearance: 1,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "إضافة المستخدم إلى المجموعة عن طريق الرابط أو معرف",
+    section: "الادمــــن",
+    syntax: "الايدي",
+    delay: 5,
 };
  
 async function getUID(url, api) {

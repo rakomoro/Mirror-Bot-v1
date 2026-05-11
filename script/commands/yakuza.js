@@ -8,14 +8,14 @@
 const deco = require('../../utils/decorations');
 
 module.exports.config = {
-    title: "yakuza",
-    release: "1.0.0",
+    title: "ياكوزا",
+    release: "2.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "نظام ياكوزا المتكامل (Gang System)",
+    section: "عـــامـة",
     syntax: "",
-    delay: 3,
+    delay: 5,
 };
 
 const YAKUZA_ASSETS = {

@@ -8,14 +8,14 @@ const baseApiUrl = async () => {
 };
 
 module.exports.config = {
-    title: "pair",
-    release: "1.0.0",
+    title: 'زوجني',
+    release: '1.7',
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: 'اقتران عشوائي مع صورة مدمجة',
+    section: 'الــعــاب',
     syntax: "",
-    delay: 3,
+    delay: 10,
 };
 
 module.exports.HakimRun = async ({ api, event }) => {

@@ -5,13 +5,13 @@ const moment = require("moment-timezone");
 
 module.exports.config = {
     title: "اشعار",
-    release: "1.0.0",
-    clearance: 0,
+    release: "0.0.4",
+    clearance: 2,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "ارسال رسالة إلى جميع المجموعات، مع دعم الصور",
+    section: "الــمـطـور",
+    syntax: "اشعار [الرسالة] (رد على صورة)",
+    delay: 5,
 };
 
 module.exports.HakimRun = async function({ api, event, args}) {

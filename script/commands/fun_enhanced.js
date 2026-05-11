@@ -11,14 +11,14 @@ const axios = require("axios");
 const path = require("path");
 
 module.exports.config = {
-    title: "fun_enhanced",
-    release: "1.0.0",
+    title: "ترفيه",
+    release: "2.2.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "ألعاب جماعية: أعلام، شخصيات، عكس كلمات، تجميع، تفكيك. أول من يجيب يفوز بجوائز مالية.",
+    section: "الــعــاب",
+    syntax: "ترفيه [الأمر الفرعي]",
+    delay: 2,
 };
 
 

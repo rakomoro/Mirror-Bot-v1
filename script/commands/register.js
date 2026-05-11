@@ -1,14 +1,14 @@
 const deco = require('../../utils/decorations');
 
 module.exports.config = {
-    title: "register",
-    release: "1.0.0",
+    title: "تسجيل",
+    release: "2.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "تسجيل حساب جديد في البوت باستخدام اللقب",
+    section: "عـــامـة",
     syntax: "",
-    delay: 3,
+    delay: 5,
 };
 
 module.exports.HakimRun = async ({ api, event, args, userData, user }) => {

@@ -1,14 +1,14 @@
 const moment = require("moment-timezone");
 
 module.exports.config = {
-    title: "تذكير",
-    release: "1.0.0",
+    title: "تزكير",
+    release: "1.0.2",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "تشغيل أو إيقاف التزكير التلقائي بأوقات الصلاة",
+    section: "الــمـطـور",
+    syntax: "تزكير تشغيل / تزكير ايقاف",
+    delay: 5,
 };
 
 const PRAYER_TIMES = {

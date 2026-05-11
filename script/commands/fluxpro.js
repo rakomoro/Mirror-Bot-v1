@@ -6,14 +6,14 @@ const baseApiUrl = async () => {
 };
 
 module.exports.config = {
-    title: "fluxpro",
-    release: "1.0.0",
+    title: 'فلوكس',
+    release: '1.7',
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: 'توليد صورة بنسبة أبعاد محددة عبر FluxPro',
+    section: 'زكـــــــاء',
+    syntax: '[وصف] --ratio 16:9',
+    delay: 10,
 };
 
 module.exports.HakimRun = async ({ api, event, args }) => {

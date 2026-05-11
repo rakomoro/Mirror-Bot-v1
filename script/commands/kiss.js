@@ -5,12 +5,12 @@ const { loadImage, createCanvas} = require("canvas");
 
 module.exports = {
   config: {
-    title: "kiss",
-    release: "1.0.0",
+    title: "بوسة",
+    release: "1.1",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "دمج صورتين داخل قالب بوسة ❤️",
+    section: "الــعــاب",
     syntax: "",
     delay: 3,
 },

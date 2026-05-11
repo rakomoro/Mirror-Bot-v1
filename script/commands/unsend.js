@@ -1,12 +1,12 @@
 module.exports.config = {
-    title: "unsend",
-    release: "1.0.0",
-    clearance: 0,
+    title: "مسح",
+    release: "1.0.1",
+    clearance: 1,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "ا",
+    section: "عـــامـة",
+    syntax: "حذف رسائل البوت",
+    delay: 0,
 };
 
 module.exports.languages = {

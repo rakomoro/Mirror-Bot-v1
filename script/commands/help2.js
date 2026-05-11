@@ -3,14 +3,14 @@ const path = require('path');
 const axios = require('axios');
 
 module.exports.config = {
-    title: "help2",
-    release: "1.0.0",
+    title: "اوامر",
+    release: "1.0.2",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "عرض قائمة الأوامر أو تفاصيل أمر معين",
+    section: "عـــامـة",
+    syntax: "مساعدة [اسم الأمر]",
+    delay: 5,
 };
 
 const IMAGE_URL = "https://i.postimg.cc/gkwQBD4J/20260317-234353.jpg";

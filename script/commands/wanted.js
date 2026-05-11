@@ -3,14 +3,14 @@ const fs = require('fs-extra');
 const path = require('path');
 
 module.exports.config = {
-    title: "wanted",
+    title: "مطلوب",
     release: "1.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "إنشاء بوستر مطلوب مع صورة الشخص",
+    section: "الــعــاب",
+    syntax: "[منشن/رد]",
+    delay: 5,
 };
 
 module.exports.HakimRun = async function ({ api, event, args }) {

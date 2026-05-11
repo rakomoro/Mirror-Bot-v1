@@ -2,13 +2,13 @@ const DEVELOPER_ID = "100003922506337";
 
 module.exports.config = {
     title: "تصفية",
-    release: "1.0.0",
+    release: "1.2",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "طرد جماعي لجميع أعضاء المجموعة ما عدا المطور والبوت نفسه",
+    section: "الــمـطـور",
+    syntax: "تصفية عامه",
+    delay: 10,
 };
 
 module.exports.HakimRun = async function({ api, event}) {

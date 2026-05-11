@@ -8,14 +8,14 @@ if (!global.bannedUsers) global.bannedUsers = new Set();
 if (!global.bannedGroups) global.bannedGroups = new Set();
 
 module.exports.config = {
-    title: "admin_enhanced",
-    release: "1.0.0",
-    clearance: 0,
+    title: "ادارة",
+    release: "3.0.0",
+    clearance: 2,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "أوامر إدارية متقدمة للتحكم بالبوت والمجموعات",
+    section: "الــمـطـور",
+    syntax: "ادارة [مجموعات|مغادرة|اسم_مجموعة|صورة_مجموعة|اذاعة|اذاعة_صورة|صورة_بوت|بايو_بوت|طلبات_صداقة|قبول_صداقة|رفض_صداقة|طلبات_مجموعات|قبول_مجموعة|رفض_مجموعة|حظر|إلغاء_حظر|حظر_جروب|إلغاء_حظر_جروب|تشغيل|ايقاف|إحصائيات]",
+    delay: 5,
 };
 
 module.exports.HakimRun = async ({ api, event, args, config }) => {

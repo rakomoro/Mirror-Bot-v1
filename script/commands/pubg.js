@@ -8,14 +8,14 @@
 const deco = require('../../utils/decorations');
 
 module.exports.config = {
-    title: "pubg",
-    release: "1.0.0",
+    title: "ببجي",
+    release: "2.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "نظام ببجي المتكامل (Battle Royale System)",
+    section: "الــعــاب",
     syntax: "",
-    delay: 3,
+    delay: 5,
 };
 
 const PUBG_ASSETS = {

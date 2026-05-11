@@ -14,14 +14,14 @@ const baseApiUrl = async () => {
 };
 
 module.exports.config = {
-    title: "tiktok",
-    release: "1.0.0",
+    title: "تيكتوك",
+    release: "1.7",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "بحث وتحميل فيديوهات تيك توك المعدلة (edits)",
+    section: "عـــامـة",
+    syntax: "tiktok <كلمة البحث>",
+    delay: 5,
 };
 
 module.exports.HakimRun = async function ({ api, event, args }) {

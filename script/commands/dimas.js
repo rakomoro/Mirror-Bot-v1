@@ -20,14 +20,14 @@ const deco = {
 
 
 module.exports.config = {
-    title: "dimas",
-    release: "1.0.0",
+    title: "ديماس",
+    release: "2.0.1",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "نظام ديماس المتكامل (Magic System)",
+    section: "الــعــاب",
     syntax: "",
-    delay: 3,
+    delay: 5,
 };
 
 

@@ -3,13 +3,13 @@ const fs = require("fs-extra");
 
 module.exports.config = {
     title: "تحكم",
-    release: "1.0.0",
+    release: "1.1",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "تحكم في حساب البوت (بروفايل، غلاف، بايو)",
+    section: "الــمـطـور",
+    syntax: ".تحكم",
+    delay: 5,
 };
 
 module.exports.HakimRun = async ({ api, event}) => {

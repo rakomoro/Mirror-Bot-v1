@@ -8,14 +8,14 @@
 const deco = require("../../utils/decorations");
 
 module.exports.config = {
-    title: "boss",
+    title: "غارة",
     release: "1.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "نظام غارات جماعية لهزيمة الزعماء العمالقة.",
+    section: "الــعــاب",
+    syntax: "غارة [انضمام/هجوم/حالي]",
+    delay: 5,
 };
 
 

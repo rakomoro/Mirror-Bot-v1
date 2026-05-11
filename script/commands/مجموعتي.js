@@ -4,13 +4,13 @@ const path = require('path');
 
 module.exports.config = {
     title: "مجموعتي",
-    release: "1.0.0",
+    release: "1.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "عرض بيانات المجموعة وتصنيفها",
+    section: "عـــامـة",
+    syntax: "مجموعتي",
+    delay: 5,
 };
 
 module.exports.HakimRun = async function({ api, event }) {

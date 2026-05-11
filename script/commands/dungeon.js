@@ -10,14 +10,14 @@ const fs = require("fs-extra");
 const path = require("path");
 
 module.exports.config = {
-    title: "dungeon",
-    release: "1.0.0",
+    title: "مغارة",
+    release: "2.1.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "نظام مغارة الظلال المتكامل (RPG System)",
+    section: "الــعــاب",
     syntax: "",
-    delay: 3,
+    delay: 5,
 };
 
 

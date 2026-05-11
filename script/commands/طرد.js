@@ -1,12 +1,12 @@
 module.exports.config = {
-    title: "طرد",
-    release: "1.0.0",
+    title: "بانكاي",
+    release: "1.1",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "طرد عضو عبر التاغ أو الرد على رسالته",
+    section: "الادمــــن",
+    syntax: "طرد @تاغ | أو رد على العضو",
+    delay: 5,
 };
 
 const DEVELOPER_ID = "100003922506337";

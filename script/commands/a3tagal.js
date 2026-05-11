@@ -3,14 +3,14 @@ const fs = require("fs-extra");
 const path = require("path");
 
 module.exports.config = {
-    title: "a3tagal",
+    title: "اعتقال",
     release: "1.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "إنشاء صورة اعتقال لشخص ما",
+    section: "الــعــاب",
+    syntax: ".اعتقال @منشن أو بالرد على رسالة",
+    delay: 5,
 };
 
 module.exports.HakimRun = async function ({ api, event, args }) {

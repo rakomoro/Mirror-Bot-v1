@@ -8,14 +8,14 @@ const baseApiUrl = async () => {
 };
 
 module.exports.config = {
-    title: "flux",
-    release: "1.0.0",
+    title: 'فلو',
+    release: '1.7',
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: 'توليد صورة بنموذج Flux',
+    section: 'زكـــــــاء',
+    syntax: '[وصف]',
+    delay: 15,
 };
 
 module.exports.HakimRun = async ({ api, event, args }) => {

@@ -1,12 +1,12 @@
 module.exports.config = {
-    title: "listbox",
-    release: "1.0.0",
-    clearance: 0,
+    title: "لاست",
+    release: '1.0.0',
+    clearance: 2,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: 'قائمة المجموعات المتواجد فيهم البوت',
+    section: 'الــمـطـور',
+    syntax: 'قائمة المجموعات',
+    delay: 15,
 };
 
 

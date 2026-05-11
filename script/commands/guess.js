@@ -1,14 +1,14 @@
 const axios = require("axios");
 
 module.exports.config = {
-    title: "guess",
+    title: "شخصيات",
     release: "1.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "لعبة تخمين شخصيات الأنمي من خلال الصور",
+    section: "الــعــاب",
+    syntax: ".شخصيات",
+    delay: 5,
 };
 
 const questions = [

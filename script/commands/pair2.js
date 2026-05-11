@@ -11,14 +11,14 @@ const getStreamFromURL = async (url) => {
 };
 
 module.exports.config = {
-    title: "pair2",
-    release: "1.0.0",
+    title: 'زورج',
+    release: '1.7',
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: 'اقتران عشوائي بين الأعضاء مع عرض الصور الشخصية',
+    section: 'الــعــاب',
     syntax: "",
-    delay: 3,
+    delay: 10,
 };
 
 module.exports.HakimRun = async ({ api, event }) => {

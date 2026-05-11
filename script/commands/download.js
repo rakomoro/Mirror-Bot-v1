@@ -3,14 +3,14 @@ const fs = require('fs-extra');
 const path = require('path');
 
 module.exports.config = {
-    title: "download",
+    title: "تحميل",
     release: "1.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "تحميل فيديوهات من تيك توك، فيسبوك، إنستغرام، يوتيوب، إكس",
+    section: "عـــامـة",
+    syntax: "تحميل [رابط الفيديو]",
+    delay: 10,
 };
 
 const getBaseUrl = async () => {

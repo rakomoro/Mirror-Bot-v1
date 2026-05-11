@@ -8,13 +8,13 @@
 const deco = require("../../utils/decorations");
 
 module.exports.config = {
-    title: "economy_enhanced",
-    release: "1.0.0",
+    title: "اقتصاد",
+    release: "2.1.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
+    summary: "نظام اقتصادي متقدم: وظائف، بنك، تجارة، قمار، استثمارات، مكافآت يومية، تعدين",
+    section: "الــعــاب",
+    syntax: "اقتصاد [الأمر الفرعي]",
     delay: 3,
 };
 

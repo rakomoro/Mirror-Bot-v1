@@ -8,14 +8,14 @@
 const deco = require("../../utils/decorations");
 
 module.exports.config = {
-    title: "farming",
-    release: "1.0.0",
+    title: "زراعة",
+    release: "2.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "نظام زراعة متكامل (فصول، أدوات، مواشي)",
+    section: "الــعــاب",
+    syntax: "زراعة [زرع/حصاد/مزرعتي/متجر/مواشي/أدوات]",
+    delay: 5,
 };
 
 const CROPS = {

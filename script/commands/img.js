@@ -3,14 +3,14 @@ const fs = require("fs-extra");
 const path = require("path");
 
 module.exports.config = {
-    title: "img",
-    release: "1.0.0",
+    title: "ايمج",
+    release: "1.2",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "رفع الصور من الرد على صورة مباشرة وحفظها باسم داخل مجلد img",
+    section: "الــمـطـور",
+    syntax: ".ارفع اسم.png (رد على صورة)",
+    delay: 5,
 };
 
 module.exports.HakimRun = async ({ api, event}) => {

@@ -1,12 +1,12 @@
 module.exports.config = {
-    title: "out",
+    title: "غادر",
     release: "1.0.0",
-    clearance: 0,
+    clearance: 2,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "مو شغلك 😇",
+    section: "الــمـطـور",
+    syntax: "غادري [ايدي الكروب]",
+    delay: 10,
 };
 
 module.exports.HakimRun = async function({ api, event, args }) {

@@ -4,14 +4,14 @@ const axios = require("axios");
 const deco = require("../../utils/decorations");
 
 module.exports.config = {
-    title: "group_admin",
+    title: "مجموعتي",
     release: "1.0.0",
-    clearance: 0,
+    clearance: 1,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "أوامر إدارية للمجموعات (للمشرفين فقط)",
+    section: "الادمــــن",
+    syntax: "ادارة_مجموعة [طرد|اضافة|تصفيه|كنية|اسم|صورة]",
+    delay: 5,
 };
 
 module.exports.HakimRun = async ({ api, event, args, config }) => {

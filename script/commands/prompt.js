@@ -6,14 +6,14 @@ const baseApiUrl = async () => {
 };
 
 module.exports.config = {
-    title: "prompt",
-    release: "1.0.0",
+    title: 'برومبت',
+    release: '1.7',
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: 'إنشاء وصف مفصل من صورة',
+    section: 'زكـــــــاء',
+    syntax: '[رد على صورة]',
+    delay: 5,
 };
 
 module.exports.HakimRun = async ({ api, event, args }) => {

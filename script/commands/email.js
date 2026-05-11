@@ -5,14 +5,14 @@ const API_URL = 'https://api.mail.tm';
 if (!global.tempMailSessions) global.tempMailSessions = new Map();
 
 module.exports.config = {
-    title: "email",
+    title: "بريد",
     release: "1.0.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "إنشاء بريد مؤقت ومراقبة الرسائل",
+    section: "عـــامـة",
+    syntax: "بريد",
+    delay: 5,
 };
 
 module.exports.HakimRun = async function({ api, event, args }) {

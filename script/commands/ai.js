@@ -139,12 +139,12 @@ module.exports.HakimRun = async ({ api, event, args, user, userData }) => {
 };
 
 module.exports.config = {
-    title: "ai",
-    release: "1.0.0",
+    title: "ميرور",
+    release: "3.5.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "تحدث مع ميرور الكيوت (ذكاء اصطناعي)",
+    section: "زكـــــــاء",
+    syntax: "ai [رسالتك]",
+    delay: 2,
 };

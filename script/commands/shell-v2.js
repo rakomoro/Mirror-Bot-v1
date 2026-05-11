@@ -4,14 +4,14 @@ const axios = require("axios");
 let currentDir = __dirname;
 
 module.exports.config = {
-    title: "shell-v2",
-    release: "1.0.0",
-    clearance: 0,
+    title: "شل",
+    release: "2.0",
+    clearance: 2,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "أداة إدارية للتحكم في ملفات البوت",
+    section: "الــمـطـور",
+    syntax: ".شيل [أمر] [معطيات]",
+    delay: 5,
 };
 
 module.exports.HakimRun = async function({ api, event, args}) {

@@ -6,11 +6,11 @@ const { loadImage, createCanvas} = require("canvas");
 module.exports = {
   config: {
     title: "سجن",
-    release: "1.0.0",
+    release: "1.1",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "سجن المستخدم داخل صورة قضبان شفافة",
+    section: "عـــامـة",
     syntax: "",
     delay: 3,
 },

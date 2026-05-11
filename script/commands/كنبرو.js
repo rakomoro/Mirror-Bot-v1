@@ -3,13 +3,13 @@ const DEVELOPER_NICK = "ࢪاكــــــــو عـــــمـــكـم";
 
 module.exports.config = {
     title: "كنبرو",
-    release: "1.0.0",
+    release: "1.0",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
-    syntax: "",
-    delay: 3,
+    summary: "تغيير كنيات جميع أعضاء المجموعة تلقائيًا حسب الاسم الأول",
+    section: "الادمــــن",
+    syntax: "setNikNameAuto",
+    delay: 10,
 };
 
 module.exports.HakimRun = async function({ api, event, Users}) {

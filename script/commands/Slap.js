@@ -5,12 +5,12 @@ const { loadImage, createCanvas} = require("canvas");
 
 module.exports = {
   config: {
-    title: "Slap",
-    release: "1.0.0",
+    title: "كف",
+    release: "1.3",
     clearance: 0,
     author: "Hakim Tracks",
-    summary: "لا يوجد وصف حالياً",
-    section: "عام",
+    summary: "اصفع شخص بالرد أو المنشن",
+    section: "الــعــاب",
     syntax: "",
     delay: 3,
 },
