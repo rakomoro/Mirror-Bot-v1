@@ -31,7 +31,7 @@ function startBot() {
 }
 
 console.log(chalk.bold.blue('\n ——————————————————————————————————————————————'));
-console.log(chalk.bold.blue(' |       MIRROR BOT AUTO-RESTART SYSTEM       |'));
+console.log(chalk.bold.blue(' |       MIRROR BOT       |'));
 console.log(chalk.bold.blue(' ——————————————————————————————————————————————\n'));
 
 startBot();
