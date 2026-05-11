@@ -48,7 +48,6 @@ module.exports.HakimRun = async function({ api, event, args }) {
 
   const uniqueCommands = new Map();
   for (const [alias, cmd] of commandsMap.entries()) {
-    // Use title instead of name
     if (cmd.config && cmd.config.title && !uniqueCommands.has(cmd.config.title)) {
       uniqueCommands.set(cmd.config.title, cmd);
     }
@@ -57,8 +56,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
   if (args.length === 0) {
     
     const grouped = {};
-    for (const [title, cmd] of uniqueCommands.entries()) {
-      // Use section instead of commandCategory
+    for (const [title, cmd] of uniqueCommands.entries()) {  
       const cat = cmd.config.section || "بدون فئة";
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(title);
@@ -106,7 +104,6 @@ module.exports.HakimRun = async function({ api, event, args }) {
   }
 
   const permMap = { 0: "عضو", 1: "أدمن المجموعة", 2: "مطور البوت" };
-  // Mapping to new keys: title, clearance, section, summary, syntax, delay
   const { title, clearance, section, summary, syntax, delay } = command.config;
 
   const details = `╮────∙⋆⋅「 تفاصيل 」⋅⋆∙────╭
