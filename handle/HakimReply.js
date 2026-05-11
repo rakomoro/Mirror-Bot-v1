@@ -9,7 +9,7 @@ module.exports = async function({ event, api, userData }) {
     if (replyIndex === -1) return;
 
     const replyData = HakimReply[replyIndex];
-    const command = Mirror.client.commands.get(replyData.name);
+    const command = Mirror.client.commands.get(replyData.title);
 
     if (!command || !command.HakimReply) return;
 
