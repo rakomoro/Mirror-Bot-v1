@@ -333,6 +333,7 @@ module.exports = {
     isUserBanned: (userId, groupId, isAdminBot) => BanSystem.checkUserAccess(userId, groupId, isAdminBot),
     globalBan: BanSystem.globalBan,
     globalUnban: BanSystem.globalUnban,
+    isGloballyBanned: BanSystem.isGloballyBanned,
     banGroup: BanSystem.banGroup,
     unbanGroup: BanSystem.unbanGroup,
     isGroupBanned: BanSystem.isGroupBanned,
