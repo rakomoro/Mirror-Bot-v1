@@ -37,7 +37,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
     const { threadID, messageID, senderID } = event;
     const action = args[0]?.toLowerCase();   
 
-    
     if (action === "بان" || action === "ban") {
         const target = getTargetID(event, args, 1);
         
@@ -79,7 +78,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }
     }
 
-   
     if (action === "نوبان" || action === "unban") {
         const target = getTargetID(event, args, 1);
         
@@ -111,7 +109,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         );
     }
 
-    
     if (action === "بان-جروب" || action === "ban_group") {
         let targetGroupID = args[1] || threadID;
         const reason = args.slice(2).join(" ") || "لا يوجد سبب";
@@ -129,7 +126,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         return api.sendMessage(`✔ تم حظر المجموعة ${targetGroupID}\n السبب: ${reason}`, threadID, messageID);
     }
 
-   
     if (action === "نوبان-جروب" || action === "unban_group") {
         let targetGroupID = args[1] || threadID;
         
@@ -146,7 +142,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         return api.sendMessage(`✔ تم الغاء حظر المجموعة ${targetGroupID}`, threadID, messageID);
     }
 
-    
     if (action === "لاست" || action === "groups" || action === "list") {
         try {
             const allThreads = await api.getThreadList(200, null, ["INBOX"]);
@@ -195,7 +190,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }
     }
 
-   
     if (action === "غادري" || action === "غادر") {
         const targetGroupID = args[1] || threadID;
         
@@ -211,19 +205,16 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }
     }
 
-    
     if (action === "ايقاف" || action === "stop") {
         global.isBotActive = false;
         return api.sendMessage("● تم ايقاف البوت مؤقتاً", threadID, messageID);
     }
 
-   
     if (action === "تشغيل" || action === "start") {
         global.isBotActive = true;
         return api.sendMessage("✔ تم تشغيل البوت", threadID, messageID);
     }
 
-    
     if (action === "احصائيات" || action === "stats") {
         const uptime = Date.now() - Mirror.client.startTime;
         const uptimeHours = Math.floor(uptime / 3600000);
@@ -243,7 +234,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         return api.sendMessage(msg, threadID, messageID);
     }
 
-   
     if (action === "اشعار" || action === "broadcast") {
         if (args.length < 2 && !event.messageReply?.attachments) {
             return api.sendMessage(
@@ -255,7 +245,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         let broadcastMessage = args.slice(1).join(" ");
         let attachment = null;
         let hasImage = false;
-        
         
         if (event.messageReply?.attachments?.length > 0) {
             const attach = event.messageReply.attachments[0];
@@ -270,7 +259,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
             }
         }
         
-       
         let senderName = "المطور";
         try {
             const userInfo = await api.getUserInfo(senderID);
@@ -317,7 +305,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }
     }
 
-    
     if (action === "بروفايل-بوت" || action === "setavatar") {
         return api.sendMessage("❕ قم بالرد على هذه الرسالة بالصورة التي تريد تعيينها كصورة بروفايل", threadID, (err, info) => {
             if (err) return;
@@ -330,7 +317,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }, messageID);
     }
 
-    
     if (action === "بايو_بوت" || action === "setbio") {
         return api.sendMessage("❕ قم بالرد على هذه الرسالة بالنص الذي تريد تعيينه كسيرة ذاتية", threadID, (err, info) => {
             if (err) return;
@@ -343,7 +329,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }, messageID);
     }
 
-    
     if (action === "طلبات" || action === "pending" || action === "requests") {
         try {
             const pendingThreads = await api.getThreadList(100, null, ['PENDING']);
@@ -388,7 +373,6 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }
     }
 
-    
     if (action === "طلبات-صداقة" || action === "friend_requests" || action === "friends") {
         try {
             const form = {
@@ -399,14 +383,8 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
                 variables: JSON.stringify({ input: { scale: 3 } })
             };
 
-            const response = await axios.post("https://www.facebook.com/api/graphql/", form, {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": `OAuth ${global.api.getAccessToken()}`
-                }
-            });
-
-            const listRequest = response.data?.data?.viewer?.friending_possibilities?.edges || [];
+            const response = await api.httpPost("https://www.facebook.com/api/graphql/", form);
+            const listRequest = JSON.parse(response).data?.viewer?.friending_possibilities?.edges || [];
 
             if (listRequest.length === 0) {
                 return api.sendMessage("❕ لا توجد طلبات صداقة معلقة", threadID, messageID);
@@ -462,11 +440,10 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }
     }
 
-  
     let helpMsg = "◆━━━━━[ اوامر الادارة المتاحة ]━━━━━◆\n\n";
     helpMsg += "- ادارة لاست - عرض المجموعات والتحكم بها\n";
     helpMsg += "- ادارة بان [ايدي|@منشن|رد] [سبب] - بان مستخدم\n";
-    helpMsg += "- ادارة نوبان [ايدي|@منشن|رد] -الغاءحظر مستخدم\n";
+    helpMsg += "- ادارة نوبان [ايدي|@منشن|رد] - الغاء حظر مستخدم\n";
     helpMsg += "- ادارة بان-جروب [ايدي] - حظر مجموعة\n";
     helpMsg += "- ادارة نوبان-جروب [ايدي] - الغاء حظر مجموعة\n";
     helpMsg += "- ادارة غادر [ايدي] - مغادرة مجموعة\n";
@@ -482,13 +459,11 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
     return api.sendMessage(helpMsg, threadID, messageID);
 };
 
-
 module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
     const { type, author, groupsData, pendingData, friendRequestsData, listRequest } = HakimReply;
     const { threadID, messageID, senderID, body, attachments } = event;
     
     if (senderID !== author) return;
-    
     
     if (type === "group_list" && groupsData) {
         const replyBody = body?.trim().toLowerCase();
@@ -541,7 +516,6 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
         return;
     }
     
-    
     if (type === "pending_groups" && pendingData) {
         const replyBody = body?.trim().toLowerCase();
         
@@ -583,7 +557,6 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
         return;
     }
     
-    
     if (type === "friend_requests" && friendRequestsData && listRequest) {
         const replyBody = body?.trim().toLowerCase();
         
@@ -595,59 +568,57 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
             const failed = [];
             const isAccept = acceptAll;
             
-            const form = {
-                av: api.getCurrentUserID(),
-                fb_api_caller_class: "RelayModern",
-                variables: {
-                    input: {
-                        source: "friends_tab",
-                        actor_id: api.getCurrentUserID(),
-                        client_mutation_id: Math.round(Math.random() * 19).toString()
-                    },
-                    scale: 3,
-                    refresh_num: 0
-                }
-            };
-            
-            if (isAccept) {
-                form.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
-                form.doc_id = "3147613905362928";
-            } else {
-                form.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
-                form.doc_id = "4108254489275063";
-            }
-            
-            const promises = [];
-            const validRequests = [];
+            const successNames = [];
+            const failedNames = [];
             
             for (const req of listRequest) {
-                if (req.node?.id) {
-                    form.variables.input.friend_requester_id = req.node.id;
-                    form.variables = JSON.stringify(form.variables);
-                    promises.push(api.httpPost("https://www.facebook.com/api/graphql/", form));
-                    validRequests.push(req);
-                    form.variables = JSON.parse(form.variables);
-                } else {
-                    failed.push("مستخدم غير معروف");
+                if (!req.node?.id) {
+                    failed.push(req);
+                    failedNames.push(req.node?.name || "مستخدم غير معروف");
+                    continue;
                 }
-            }
-            
-            for (let i = 0; i < promises.length; i++) {
+                
+                const form = {
+                    av: api.getCurrentUserID(),
+                    fb_api_req_friendly_name: isAccept ? "FriendingCometFriendRequestConfirmMutation" : "FriendingCometFriendRequestDeleteMutation",
+                    fb_api_caller_class: "RelayModern",
+                    doc_id: isAccept ? "3147613905362928" : "4108254489275063",
+                    variables: JSON.stringify({
+                        input: {
+                            source: "friends_tab",
+                            actor_id: api.getCurrentUserID(),
+                            client_mutation_id: Math.round(Math.random() * 19).toString(),
+                            friend_requester_id: req.node.id
+                        },
+                        scale: 3,
+                        refresh_num: 0
+                    })
+                };
+                
                 try {
-                    const result = await promises[i];
+                    const result = await api.httpPost("https://www.facebook.com/api/graphql/", form);
                     if (JSON.parse(result).errors) {
-                        failed.push(validRequests[i]?.node?.name || "مستخدم");
+                        failed.push(req);
+                        failedNames.push(req.node?.name || "مستخدم");
                     } else {
-                        success.push(validRequests[i]?.node?.name || "مستخدم");
+                        success.push(req);
+                        successNames.push(req.node?.name || "مستخدم");
                     }
                 } catch (e) {
-                    failed.push(validRequests[i]?.node?.name || "مستخدم");
+                    failed.push(req);
+                    failedNames.push(req.node?.name || "مستخدم");
                 }
             }
             
             let replyMsg = `✔ ${isAccept ? "تم قبول" : "تم رفض"} طلبات الصداقة بنجاح لـ ${success.length} شخص`;
+            if (successNames.length > 0 && successNames.length <= 10) {
+                replyMsg += `\n◆ ${successNames.join("\n◆ ")}`;
+            }
             if (failed.length > 0) {
                 replyMsg += `\n✘ فشل مع ${failed.length} شخص`;
+                if (failedNames.length <= 5) {
+                    replyMsg += `\n● ${failedNames.join("\n● ")}`;
+                }
             }
             
             api.sendMessage(replyMsg, threadID, messageID);
@@ -670,8 +641,10 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
             
             const form = {
                 av: api.getCurrentUserID(),
+                fb_api_req_friendly_name: isAccept ? "FriendingCometFriendRequestConfirmMutation" : "FriendingCometFriendRequestDeleteMutation",
                 fb_api_caller_class: "RelayModern",
-                variables: {
+                doc_id: isAccept ? "3147613905362928" : "4108254489275063",
+                variables: JSON.stringify({
                     input: {
                         source: "friends_tab",
                         actor_id: api.getCurrentUserID(),
@@ -680,18 +653,8 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
                     },
                     scale: 3,
                     refresh_num: 0
-                }
+                })
             };
-            
-            if (isAccept) {
-                form.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
-                form.doc_id = "3147613905362928";
-            } else {
-                form.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
-                form.doc_id = "4108254489275063";
-            }
-            
-            form.variables = JSON.stringify(form.variables);
             
             try {
                 const result = await api.httpPost("https://www.facebook.com/api/graphql/", form);
@@ -708,7 +671,6 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
         try { await api.unsendMessage(HakimReply.messageID); } catch(e) {}
         return;
     }
-   
     
     if (type === "set_avatar") {
         if (!attachments || attachments.length === 0 || attachments[0].type !== "photo") {
@@ -733,7 +695,6 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
         try { await api.unsendMessage(HakimReply.messageID); } catch(e) {}
         return;
     }
-    
     
     if (type === "set_bio") {
         if (!body || body.length < 3) {
