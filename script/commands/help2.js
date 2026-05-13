@@ -13,7 +13,7 @@ module.exports.config = {
     delay: 5,
 };
 
-const IMAGE_URL = "https://i.imgur.com/aAO58sQ.jpeg";
+const IMAGE_URL = "https://i.postimg.cc/zX8GQwtz/68747470733a2f2f692e696d6775722e636f6d2f61414f353873512e6a706567.jpg";
 const LOCAL_IMG_PATH = path.join(__dirname, "img", "menu.png");
 const FALLBACK_IMG_PATH = path.join(__dirname, "cache", "menu.jpg");
 const BOT_NAME = "Mirror Bot v2.0.1";
