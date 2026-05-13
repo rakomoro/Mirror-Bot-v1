@@ -32,9 +32,7 @@ db.prepare(`
         user_id TEXT PRIMARY KEY,
         banned_by TEXT,
         reason TEXT,
-        banned_at INTEGER,
-        expires_at INTEGER,
-        is_permanent INTEGER DEFAULT 1
+        banned_at INTEGER
     )
 `).run();
 
@@ -57,16 +55,6 @@ db.prepare(`
         reason TEXT,
         banned_at INTEGER,
         PRIMARY KEY (user_id, group_id)
-    )
-`).run();
-
-// جدول قائمة المستخدمين المسموح لهم (whitelist)
-db.prepare(`
-    CREATE TABLE IF NOT EXISTS whitelist (
-        user_id TEXT PRIMARY KEY,
-        added_by TEXT,
-        reason TEXT,
-        added_at INTEGER
     )
 `).run();
 
@@ -100,170 +88,122 @@ async function downloadAvatar(userID, url) {
     }
 }
 
-// ============= دوال نظام الحظر العالمية =============
+// ============= نظام الحظر المبسط =============
 
-const BanSystem = {
-    // حظر مستخدم عالمياً
-    globalBan: (userId, bannedBy, reason = "لا يوجد سبب", duration = null) => {
-        const expiresAt = duration ? Date.now() + (duration * 1000) : null;
-        const isPermanent = !duration;
-        
-        const stmt = db.prepare(`
-            INSERT OR REPLACE INTO global_bans (user_id, banned_by, reason, banned_at, expires_at, is_permanent)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `);
-        stmt.run(userId, bannedBy, reason, Date.now(), expiresAt, isPermanent ? 1 : 0);
-        logger.loader(`تم حظر المستخدم ${userId} عالمياً بواسطة ${bannedBy}`, 'ban');
-        return true;
-    },
+// حظر مستخدم عالمياً
+function globalBan(userId, bannedBy, reason = "لا يوجد سبب") {
+    const stmt = db.prepare(`
+        INSERT OR REPLACE INTO global_bans (user_id, banned_by, reason, banned_at)
+        VALUES (?, ?, ?, ?)
+    `);
+    stmt.run(userId, bannedBy, reason, Date.now());
+    logger.loader(`تم حظر المستخدم ${userId} عالمياً بواسطة ${bannedBy}`, 'ban');
+    return true;
+}
+
+// إلغاء الحظر العالمي
+function globalUnban(userId) {
+    const stmt = db.prepare("DELETE FROM global_bans WHERE user_id = ?");
+    stmt.run(userId);
+    logger.loader(`تم إلغاء الحظر العالمي للمستخدم ${userId}`, 'unban');
+    return true;
+}
+
+// التحقق من الحظر العالمي
+function isGloballyBanned(userId) {
+    const stmt = db.prepare("SELECT * FROM global_bans WHERE user_id = ?");
+    const ban = stmt.get(userId);
+    return ban || false;
+}
+
+// حظر مجموعة
+function banGroup(groupId, bannedBy, reason = "لا يوجد سبب") {
+    const stmt = db.prepare(`
+        INSERT OR REPLACE INTO group_bans (group_id, banned_by, reason, banned_at)
+        VALUES (?, ?, ?, ?)
+    `);
+    stmt.run(groupId, bannedBy, reason, Date.now());
+    return true;
+}
+
+// إلغاء حظر مجموعة
+function unbanGroup(groupId) {
+    const stmt = db.prepare("DELETE FROM group_bans WHERE group_id = ?");
+    stmt.run(groupId);
+    return true;
+}
+
+// التحقق من حظر مجموعة
+function isGroupBanned(groupId) {
+    const stmt = db.prepare("SELECT * FROM group_bans WHERE group_id = ?");
+    return stmt.get(groupId) || false;
+}
+
+// حظر مستخدم محلياً
+function localBan(userId, groupId, bannedBy, reason = "لا يوجد سبب") {
+    const stmt = db.prepare(`
+        INSERT OR REPLACE INTO local_bans (user_id, group_id, banned_by, reason, banned_at)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+    stmt.run(userId, groupId, bannedBy, reason, Date.now());
+    return true;
+}
+
+// إلغاء الحظر المحلي
+function localUnban(userId, groupId) {
+    const stmt = db.prepare("DELETE FROM local_bans WHERE user_id = ? AND group_id = ?");
+    stmt.run(userId, groupId);
+    return true;
+}
+
+// التحقق من الحظر المحلي
+function isLocallyBanned(userId, groupId) {
+    const stmt = db.prepare("SELECT * FROM local_bans WHERE user_id = ? AND group_id = ?");
+    return stmt.get(userId, groupId) || false;
+}
+
+// التحقق من صلاحية المستخدم
+function checkUserAccess(userId, groupId, isAdminBot = false) {
+    if (isAdminBot) return { allowed: true };
     
-    // إلغاء الحظر العالمي
-    globalUnban: (userId) => {
-        const stmt = db.prepare("DELETE FROM global_bans WHERE user_id = ?");
-        stmt.run(userId);
-        logger.loader(`تم إلغاء الحظر العالمي للمستخدم ${userId}`, 'unban');
-        return true;
-    },
+    const globalBan = isGloballyBanned(userId);
+    if (globalBan) {
+        return {
+            allowed: false,
+            reason: `🚫 تم حظرك عالمياً\nالسبب: ${globalBan.reason}`,
+            type: 'global'
+        };
+    }
     
-    // التحقق من الحظر العالمي
-    isGloballyBanned: (userId) => {
-        const stmt = db.prepare("SELECT * FROM global_bans WHERE user_id = ?");
-        const ban = stmt.get(userId);
-        
-        if (!ban) return false;
-        
-        // التحقق من انتهاء المدة
-        if (!ban.is_permanent && ban.expires_at && ban.expires_at < Date.now()) {
-            BanSystem.globalUnban(userId);
-            return false;
-        }
-        
-        return ban;
-    },
-    
-    // حظر مجموعة
-    banGroup: (groupId, bannedBy, reason = "لا يوجد سبب") => {
-        const stmt = db.prepare(`
-            INSERT OR REPLACE INTO group_bans (group_id, banned_by, reason, banned_at)
-            VALUES (?, ?, ?, ?)
-        `);
-        stmt.run(groupId, bannedBy, reason, Date.now());
-        logger.loader(`تم حظر المجموعة ${groupId} بواسطة ${bannedBy}`, 'ban');
-        return true;
-    },
-    
-    // إلغاء حظر المجموعة
-    unbanGroup: (groupId) => {
-        const stmt = db.prepare("DELETE FROM group_bans WHERE group_id = ?");
-        stmt.run(groupId);
-        logger.loader(`تم إلغاء حظر المجموعة ${groupId}`, 'unban');
-        return true;
-    },
-    
-    // التحقق من حظر المجموعة
-    isGroupBanned: (groupId) => {
-        const stmt = db.prepare("SELECT * FROM group_bans WHERE group_id = ?");
-        return stmt.get(groupId);
-    },
-    
-    // حظر مستخدم محلياً في مجموعة
-    localBan: (userId, groupId, bannedBy, reason = "لا يوجد سبب") => {
-        const stmt = db.prepare(`
-            INSERT OR REPLACE INTO local_bans (user_id, group_id, banned_by, reason, banned_at)
-            VALUES (?, ?, ?, ?, ?)
-        `);
-        stmt.run(userId, groupId, bannedBy, reason, Date.now());
-        logger.loader(`تم حظر المستخدم ${userId} في المجموعة ${groupId}`, 'ban');
-        return true;
-    },
-    
-    // إلغاء الحظر المحلي
-    localUnban: (userId, groupId) => {
-        const stmt = db.prepare("DELETE FROM local_bans WHERE user_id = ? AND group_id = ?");
-        stmt.run(userId, groupId);
-        return true;
-    },
-    
-    // التحقق من الحظر المحلي
-    isLocallyBanned: (userId, groupId) => {
-        const stmt = db.prepare("SELECT * FROM local_bans WHERE user_id = ? AND group_id = ?");
-        return stmt.get(userId, groupId);
-    },
-    
-    // إضافة إلى القائمة البيضاء
-    addToWhitelist: (userId, addedBy, reason = "مستخدم موثوق") => {
-        const stmt = db.prepare(`
-            INSERT OR REPLACE INTO whitelist (user_id, added_by, reason, added_at)
-            VALUES (?, ?, ?, ?)
-        `);
-        stmt.run(userId, addedBy, reason, Date.now());
-        return true;
-    },
-    
-    // إزالة من القائمة البيضاء
-    removeFromWhitelist: (userId) => {
-        const stmt = db.prepare("DELETE FROM whitelist WHERE user_id = ?");
-        stmt.run(userId);
-        return true;
-    },
-    
-    // التحقق من القائمة البيضاء
-    isWhitelisted: (userId) => {
-        const stmt = db.prepare("SELECT * FROM whitelist WHERE user_id = ?");
-        return stmt.get(userId);
-    },
-    
-    // التحقق الشامل من صلاحية المستخدم (يعيد سبب المنع إن وُجد)
-    checkUserAccess: (userId, groupId, isAdminBot = false) => {
-        // أدمن البوت لا يمكن حظره
-        if (isAdminBot) return { allowed: true };
-        
-        // التحقق من القائمة البيضاء أولاً
-        if (BanSystem.isWhitelisted(userId)) return { allowed: true };
-        
-        // التحقق من الحظر العالمي
-        const globalBan = BanSystem.isGloballyBanned(userId);
-        if (globalBan) {
+    if (groupId) {
+        const localBan = isLocallyBanned(userId, groupId);
+        if (localBan) {
             return {
                 allowed: false,
-                reason: `🚫 تم حظرك عالمياً من البوت\n📝 السبب: ${globalBan.reason}\n👮 بواسطة: ${globalBan.banned_by}`,
-                type: 'global'
+                reason: `🚫 تم حظرك في هذه المجموعة\nالسبب: ${localBan.reason}`,
+                type: 'local'
             };
         }
-        
-        // التحقق من الحظر المحلي (في حالة وجود groupId)
-        if (groupId) {
-            const localBan = BanSystem.isLocallyBanned(userId, groupId);
-            if (localBan) {
-                return {
-                    allowed: false,
-                    reason: `🚫 تم حظرك في هذه المجموعة\n📝 السبب: ${localBan.reason}\n👮 بواسطة: ${localBan.banned_by}`,
-                    type: 'local'
-                };
-            }
-        }
-        
-        return { allowed: true };
-    },
-    
-    // الحصول على قائمة المحظورين عالمياً
-    getGlobalBannedList: () => {
-        const stmt = db.prepare("SELECT * FROM global_bans ORDER BY banned_at DESC");
-        return stmt.all();
-    },
-    
-    // الحصول على قائمة المجموعات المحظورة
-    getBannedGroupsList: () => {
-        const stmt = db.prepare("SELECT * FROM group_bans ORDER BY banned_at DESC");
-        return stmt.all();
-    },
-    
-    // الحصول على قائمة المحظورين محلياً في مجموعة
-    getLocalBannedList: (groupId) => {
-        const stmt = db.prepare("SELECT * FROM local_bans WHERE group_id = ? ORDER BY banned_at DESC");
-        return stmt.all(groupId);
     }
-};
+    
+    return { allowed: true };
+}
+
+// الحصول على قائمة المحظورين
+function getGlobalBannedList() {
+    const stmt = db.prepare("SELECT * FROM global_bans ORDER BY banned_at DESC");
+    return stmt.all();
+}
+
+function getBannedGroupsList() {
+    const stmt = db.prepare("SELECT * FROM group_bans ORDER BY banned_at DESC");
+    return stmt.all();
+}
+
+function getLocalBannedList(groupId) {
+    const stmt = db.prepare("SELECT * FROM local_bans WHERE group_id = ? ORDER BY banned_at DESC");
+    return stmt.all(groupId);
+}
 
 module.exports = {
     get: async (id) => {
@@ -316,23 +256,18 @@ module.exports = {
         db.prepare("UPDATE users SET exp = ?, level = ? WHERE id = ?").run(newExp, newLevel, id);
     },
     
-    // تصدير نظام الحظر ليكون متاحاً عالمياً
-    banSystem: BanSystem,
-    
-    // دوال مساعدة إضافية
-    isUserBanned: (userId, groupId, isAdminBot) => BanSystem.checkUserAccess(userId, groupId, isAdminBot),
-    globalBan: BanSystem.globalBan,
-    globalUnban: BanSystem.globalUnban,
-    banGroup: BanSystem.banGroup,
-    unbanGroup: BanSystem.unbanGroup,
-    isGroupBanned: BanSystem.isGroupBanned,
-    localBan: BanSystem.localBan,
-    localUnban: BanSystem.localUnban,
-    isLocallyBanned: BanSystem.isLocallyBanned,
-    addToWhitelist: BanSystem.addToWhitelist,
-    removeFromWhitelist: BanSystem.removeFromWhitelist,
-    isWhitelisted: BanSystem.isWhitelisted,
-    getGlobalBannedList: BanSystem.getGlobalBannedList,
-    getBannedGroupsList: BanSystem.getBannedGroupsList,
-    getLocalBannedList: BanSystem.getLocalBannedList
+    // تصدير دوال الحظر
+    globalBan,
+    globalUnban,
+    isGloballyBanned,
+    banGroup,
+    unbanGroup,
+    isGroupBanned,
+    localBan,
+    localUnban,
+    isLocallyBanned,
+    checkUserAccess,
+    getGlobalBannedList,
+    getBannedGroupsList,
+    getLocalBannedList
 };
