@@ -1,7 +1,7 @@
 {
-  "name": "mirror-bot-v1",
-  "version": "1.0.1",
-  "description": "Mirror Bot v1.0.1 - developer by Hakim Tracks",
+  "name": "mirror-bot",
+  "version": "1.1.0",
+  "description": "Mirror Bot v1.1.0 - developer by Hakim Tracks",
   "main": "index.js",
   "scripts": {
     "start": "node start.js",
