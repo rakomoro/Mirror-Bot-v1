@@ -8,21 +8,17 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 if (global.isBotActive === undefined) global.isBotActive = true;
 
-// معرف المطور (تأمين إضافي)
-const botOwnerID = "100003922506337";
+const MASTER_DEVELOPER_ID = "100003922506337";
 
 module.exports = async function({ event, api, userData: userDataModule }) {
     const { body, senderID, threadID, messageID } = event;
 
     if (!body) return;
 
-    // تحويل المعرفات لنصوص لضمان دقة المقارنة
     const sID = String(senderID);
     const tID = String(threadID);
-    const ownerID = String(botOwnerID);
 
-    // أوامر المطور لتشغيل/إيقاف البوت
-    if (sID === ownerID) {
+    if (sID === MASTER_DEVELOPER_ID) {
         if (body.toLowerCase() === "ايقاف") {
             global.isBotActive = false;
             loggerAdvanced.logInfo('البوت تم إيقافه من قبل المطور');
@@ -35,7 +31,7 @@ module.exports = async function({ event, api, userData: userDataModule }) {
         }
     }
 
-    if (!global.isBotActive && sID !== ownerID) return; 
+    if (!global.isBotActive && sID !== MASTER_DEVELOPER_ID) return; 
 
     const { config, commands, cooldowns } = Mirror.client;
     const prefix = config.PREFIX;
@@ -64,26 +60,25 @@ module.exports = async function({ event, api, userData: userDataModule }) {
         const allCommandNames = Array.from(commands.keys());
         const bestMatch = stringSimilarity.findBestMatch(commandName, allCommandNames);
         if (bestMatch.bestMatch.rating >= 0.5) {
-            return api.sendMessage(`⚠️ الأمر "${commandName}" غير موجود. هل تقصد "${bestMatch.bestMatch.target}"؟`, threadID, messageID);
+            return api.sendMessage(`يا عسل الأمر "${commandName}" غير موجود. هل تقصد "${bestMatch.bestMatch.target}"؟`, threadID, messageID);
         }
         return;
     } else if (!command) {
         return;
     }
     
-    // ============= نظام التحقق من حظر المجموعة =============
+    
     const groupBan = userDataModule.isGroupBanned(tID);
     if (groupBan) {
-        // المطور (من الإعدادات أو التأمين الإضافي) فقط يمكنه استخدام الأوامر في المجموعات المحظورة
-        if (sID !== ownerID && !config.ADMINBOT.includes(sID)) {
+        if (sID !== MASTER_DEVELOPER_ID && !config.ADMINBOT.includes(sID)) {
             return api.setMessageReaction("🚫", messageID, (err) => {}, true);
         }
     }
     
-    // ============= نظام التحقق من حظر المستخدم =============
-    const isAdminBot = config.ADMINBOT.includes(sID) || sID === ownerID;
     
-    // التحقق من صلاحية المستخدم - المحظورون لا يرسل لهم أي رد، فقط تفاعل 🚫
+    const isAdminBot = config.ADMINBOT.includes(sID) || sID === MASTER_DEVELOPER_ID;
+    
+    
     if (!isAdminBot) {
         const accessCheck = userDataModule.isUserBanned(sID, tID, false);
         
@@ -104,7 +99,7 @@ module.exports = async function({ event, api, userData: userDataModule }) {
     }
 
     let userPermission = 0;
-    if (config.ADMINBOT.includes(sID) || sID === ownerID) { 
+    if (config.ADMINBOT.includes(sID) || sID === MASTER_DEVELOPER_ID) { 
         userPermission = 2; 
     } else {
         try {
@@ -138,7 +133,7 @@ module.exports = async function({ event, api, userData: userDataModule }) {
         try {
             const userInfo = await api.getUserInfo(sID);
             const name = userInfo[sID]?.name || "مستخدم ميرور";
-            const type = (config.ADMINBOT.includes(sID) || sID === ownerID) ? "مطور" : "مستخدم";
+            const type = (config.ADMINBOT.includes(sID) || sID === MASTER_DEVELOPER_ID) ? "مطور" : "مستخدم";
             await userDataModule.create(sID, name, type);
             user = await userDataModule.get(sID);
             logger.loader(`تم إنشاء سجل تلقائي للمستخدم: ${name} [${sID}]`, 'event');
@@ -147,7 +142,7 @@ module.exports = async function({ event, api, userData: userDataModule }) {
         }
     }
 
-    if ((config.ADMINBOT.includes(sID) || sID === ownerID) && user) {
+    if ((config.ADMINBOT.includes(sID) || sID === MASTER_DEVELOPER_ID) && user) {
         user.isDeveloper = true;
         user.dungeon = user.dungeon || {};
         user.dungeon.gate = "S";
