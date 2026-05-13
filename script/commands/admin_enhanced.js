@@ -8,17 +8,141 @@ module.exports.config = {
     clearance: 2,
     author: "Hakim Tracks",
     summary: "أوامر إدارية متقدمة للتحكم بالبوت والمجموعات",
-    section: "الــمـطـور",
-    syntax: "ادارة [لاست|ضيفني|حظر|الغاء_حظر|حظر_جروب|الغاء_حظر_جروب|غادر|اذاعة|اذاعة_صورة|صورة_بوت|بايو_بوت|طلبات|تشغيل|ايقاف|احصائيات]",
+    section: "المطور",
+    syntax: "ادارة [لاست|ضيفني|حظر|الغاء_حظر|حظر_جروب|الغاء_حظر_جروب|غادر|اشعار|صورة_بوت|بايو_بوت|طلبات|تشغيل|ايقاف|احصائيات]",
     delay: 5,
 };
+
+// دالة مساعدة للحصول على ID المستخدم
+function getTargetID(event, args, startIndex = 1) {
+    const { mentions, messageReply } = event;
+    
+    if (Object.keys(mentions).length > 0) {
+        return { id: Object.keys(mentions)[0], type: "mention" };
+    }
+    
+    if (messageReply?.senderID) {
+        return { id: messageReply.senderID, type: "reply" };
+    }
+    
+    const potentialID = args[startIndex];
+    if (potentialID && /^[0-9]+$/.test(potentialID)) {
+        return { id: potentialID, type: "id" };
+    }
+    
+    return null;
+}
 
 module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
     const { threadID, messageID, senderID } = event;
     const action = args[0]?.toLowerCase();
 
     if (!config.ADMINBOT.includes(senderID)) {
-        return api.sendMessage("🚫 ليس لديك الصلاحية لاستخدام هذا الأمر.", threadID, messageID);
+        return api.sendMessage("ليس لديك الصلاحية لاستخدام هذا الأمر.", threadID, messageID);
+    }
+
+    // ============= حظر مستخدم (عالمي) =============
+    if (action === "حظر" || action === "ban") {
+        const target = getTargetID(event, args, 1);
+        
+        if (!target) {
+            return api.sendMessage(
+                "الاستخدام: ادارة حظر [ايدي | @منشن | رد على رسالة] [السبب]\n\nمثال:\n• ادارة حظر 123456789 سبب الحظر\n• ادارة حظر @احمد سبب الحظر\n• (رد على رسالة الشخص) ادارة حظر سبب الحظر",
+                threadID, messageID
+            );
+        }
+        
+        const targetID = target.id;
+        const reason = args.slice(2).join(" ") || "لا يوجد سبب";
+        
+        if (config.ADMINBOT.includes(targetID)) {
+            return api.sendMessage("لا يمكن حظر مطور آخر!", threadID, messageID);
+        }
+        
+        const isBanned = userData.isGloballyBanned(targetID);
+        if (isBanned) {
+            return api.sendMessage(`المستخدم ${targetID} محظور بالفعل`, threadID, messageID);
+        }
+        
+        userData.globalBan(targetID, senderID, reason);
+        
+        let userName = targetID;
+        try {
+            const userInfo = await api.getUserInfo(targetID);
+            userName = userInfo[targetID]?.name || targetID;
+        } catch(e) {}
+        
+        return api.sendMessage(
+            `✅ تم حظر المستخدم عالمياً\n\n👤 المستخدم: ${userName}\n🆔 المعرف: ${targetID}\n📝 السبب: ${reason}`,
+            threadID, messageID
+        );
+    }
+
+    // ============= الغاء حظر مستخدم =============
+    if (action === "الغاء_حظر" || action === "unban") {
+        const target = getTargetID(event, args, 1);
+        
+        if (!target) {
+            return api.sendMessage(
+                "الاستخدام: ادارة الغاء_حظر [ايدي | @منشن | رد على رسالة]\n\nمثال:\n• ادارة الغاء_حظر 123456789\n• ادارة الغاء_حظر @احمد\n• (رد على رسالة الشخص) ادارة الغاء_حظر",
+                threadID, messageID
+            );
+        }
+        
+        const targetID = target.id;
+        
+        const isBanned = userData.isGloballyBanned(targetID);
+        if (!isBanned) {
+            return api.sendMessage(`المستخدم ${targetID} غير محظور`, threadID, messageID);
+        }
+        
+        userData.globalUnban(targetID);
+        
+        let userName = targetID;
+        try {
+            const userInfo = await api.getUserInfo(targetID);
+            userName = userInfo[targetID]?.name || targetID;
+        } catch(e) {}
+        
+        return api.sendMessage(
+            `✅ تم إلغاء الحظر العالمي عن المستخدم\n\n👤 المستخدم: ${userName}\n🆔 المعرف: ${targetID}`,
+            threadID, messageID
+        );
+    }
+
+    // ============= حظر مجموعة =============
+    if (action === "حظر_جروب" || action === "ban_group") {
+        let targetGroupID = args[1] || threadID;
+        const reason = args.slice(2).join(" ") || "لا يوجد سبب";
+        
+        if (!/^[0-9]+$/.test(targetGroupID)) {
+            return api.sendMessage("الاستخدام: ادارة حظر_جروب [ايدي المجموعة] [السبب]", threadID, messageID);
+        }
+        
+        const isBanned = userData.isGroupBanned(targetGroupID);
+        if (isBanned) {
+            return api.sendMessage(`المجموعة ${targetGroupID} محظورة بالفعل`, threadID, messageID);
+        }
+        
+        userData.banGroup(targetGroupID, senderID, reason);
+        return api.sendMessage(`✅ تم حظر المجموعة ${targetGroupID}\n📝 السبب: ${reason}`, threadID, messageID);
+    }
+
+    // ============= الغاء حظر مجموعة =============
+    if (action === "الغاء_حظر_جروب" || action === "unban_group") {
+        let targetGroupID = args[1] || threadID;
+        
+        if (!/^[0-9]+$/.test(targetGroupID)) {
+            return api.sendMessage("الاستخدام: ادارة الغاء_حظر_جروب [ايدي المجموعة]", threadID, messageID);
+        }
+        
+        const isBanned = userData.isGroupBanned(targetGroupID);
+        if (!isBanned) {
+            return api.sendMessage(`المجموعة ${targetGroupID} غير محظورة`, threadID, messageID);
+        }
+        
+        userData.unbanGroup(targetGroupID);
+        return api.sendMessage(`✅ تم إلغاء حظر المجموعة ${targetGroupID}`, threadID, messageID);
     }
 
     // ============= أمر لاست (عرض المجموعات) =============
@@ -70,94 +194,32 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }
     }
 
-    // ============= حظر مستخدم =============
-    if (action === "حظر" || action === "ban") {
-        const targetID = args[1];
-        const reason = args.slice(2).join(" ") || "لا يوجد سبب";
-        
-        if (!targetID) {
-            return api.sendMessage("الاستخدام: ادارة حظر [معرف المستخدم] [السبب]", threadID, messageID);
-        }
-        
-        if (config.ADMINBOT.includes(targetID)) {
-            return api.sendMessage("لا يمكن حظر مطور آخر!", threadID, messageID);
-        }
-        
-        const isBanned = userData.isGloballyBanned(targetID);
-        if (isBanned) {
-            return api.sendMessage(`المستخدم ${targetID} محظور بالفعل`, threadID, messageID);
-        }
-        
-        userData.globalBan(targetID, senderID, reason);
-        return api.sendMessage(`تم حظر المستخدم ${targetID}\nالسبب: ${reason}`, threadID, messageID);
-    }
-
-    // ============= الغاء حظر مستخدم =============
-    if (action === "الغاء_حظر" || action === "unban") {
-        const targetID = args[1];
-        
-        if (!targetID) {
-            return api.sendMessage("الاستخدام: ادارة الغاء_حظر [معرف المستخدم]", threadID, messageID);
-        }
-        
-        const isBanned = userData.isGloballyBanned(targetID);
-        if (!isBanned) {
-            return api.sendMessage(`المستخدم ${targetID} غير محظور`, threadID, messageID);
-        }
-        
-        userData.globalUnban(targetID);
-        return api.sendMessage(`تم الغاء حظر المستخدم ${targetID}`, threadID, messageID);
-    }
-
-    // ============= حظر مجموعة =============
-    if (action === "حظر_جروب" || action === "ban_group") {
-        const targetGroupID = args[1] || threadID;
-        const reason = args.slice(2).join(" ") || "لا يوجد سبب";
-        
-        const isBanned = userData.isGroupBanned(targetGroupID);
-        if (isBanned) {
-            return api.sendMessage(`المجموعة ${targetGroupID} محظورة بالفعل`, threadID, messageID);
-        }
-        
-        userData.banGroup(targetGroupID, senderID, reason);
-        return api.sendMessage(`تم حظر المجموعة ${targetGroupID}\nالسبب: ${reason}`, threadID, messageID);
-    }
-
-    // ============= الغاء حظر مجموعة =============
-    if (action === "الغاء_حظر_جروب" || action === "unban_group") {
-        const targetGroupID = args[1] || threadID;
-        
-        const isBanned = userData.isGroupBanned(targetGroupID);
-        if (!isBanned) {
-            return api.sendMessage(`المجموعة ${targetGroupID} غير محظورة`, threadID, messageID);
-        }
-        
-        userData.unbanGroup(targetGroupID);
-        return api.sendMessage(`تم الغاء حظر المجموعة ${targetGroupID}`, threadID, messageID);
-    }
-
     // ============= مغادرة مجموعة =============
     if (action === "غادر" || action === "leave") {
         const targetGroupID = args[1] || threadID;
         
+        if (!/^[0-9]+$/.test(targetGroupID)) {
+            return api.sendMessage("الاستخدام: ادارة غادر [ايدي المجموعة]", threadID, messageID);
+        }
+        
         try {
             await api.removeUserFromGroup(api.getCurrentUserID(), targetGroupID);
-            return api.sendMessage(`تم مغادرة المجموعة ${targetGroupID}`, threadID, messageID);
+            return api.sendMessage(`✅ تم مغادرة المجموعة ${targetGroupID}`, threadID, messageID);
         } catch (error) {
-            return api.sendMessage(`فشل مغادرة المجموعة: ${error.message}`, threadID, messageID);
+            return api.sendMessage(`❌ فشل مغادرة المجموعة: ${error.message}`, threadID, messageID);
         }
     }
 
     // ============= إيقاف البوت =============
     if (action === "ايقاف" || action === "stop") {
         global.isBotActive = false;
-        return api.sendMessage("تم إيقاف البوت مؤقتاً", threadID, messageID);
+        return api.sendMessage("🛑 تم إيقاف البوت مؤقتاً", threadID, messageID);
     }
 
     // ============= تشغيل البوت =============
     if (action === "تشغيل" || action === "start") {
         global.isBotActive = true;
-        return api.sendMessage("تم تشغيل البوت", threadID, messageID);
+        return api.sendMessage("✅ تم تشغيل البوت", threadID, messageID);
     }
 
     // ============= إحصائيات =============
@@ -169,88 +231,94 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         const globalBans = userData.getGlobalBannedList();
         const bannedGroups = userData.getBannedGroupsList();
         
-        let msg = "احصائيات البوت\n━━━━━━━━━━━━━\n";
-        msg += `الاوامر: ${Mirror.client.commands.size}\n`;
-        msg += `الاحداث: ${Mirror.client.events.size}\n`;
-        msg += `وقت التشغيل: ${uptimeHours}س ${uptimeMinutes}د\n`;
-        msg += `محظورين عالمياً: ${globalBans.length}\n`;
-        msg += `مجموعات محظورة: ${bannedGroups.length}\n`;
-        msg += `حالة البوت: ${global.isBotActive ? "نشط" : "متوقف"}`;
+        let msg = "📊 احصائيات البوت\n━━━━━━━━━━━━━\n";
+        msg += `📦 الأوامر: ${Mirror.client.commands.size}\n`;
+        msg += `🎯 الأحداث: ${Mirror.client.events.size}\n`;
+        msg += `⏱️ وقت التشغيل: ${uptimeHours}س ${uptimeMinutes}د\n`;
+        msg += `🚫 محظورين عالمياً: ${globalBans.length}\n`;
+        msg += `🔇 مجموعات محظورة: ${bannedGroups.length}\n`;
+        msg += `🟢 حالة البوت: ${global.isBotActive ? "نشط" : "متوقف"}`;
         
         return api.sendMessage(msg, threadID, messageID);
     }
 
-    // ============= إذاعة =============
-    if (action === "اذاعة" || action === "broadcast") {
-        if (args.length < 2) {
-            return api.sendMessage("الاستخدام: ادارة اذاعة [الرسالة]", threadID, messageID);
+    // ============= إشعار (إذاعة) =============
+    if (action === "اشعار" || action === "broadcast") {
+        if (args.length < 2 && !event.messageReply?.attachments) {
+            return api.sendMessage(
+                "📢 الاستخدام: ادارة اشعار [الرسالة]\n\n• يمكنك الرد على صورة لإرسالها مع الإشعار\n• مثال: ادارة اشعار مرحبا جميعاً",
+                threadID, messageID
+            );
         }
         
-        const broadcastMessage = args.slice(1).join(" ");
+        let broadcastMessage = args.slice(1).join(" ");
+        let attachment = null;
+        let hasImage = false;
+        
+        // التحقق من وجود صورة في الرد
+        if (event.messageReply?.attachments?.length > 0) {
+            const attach = event.messageReply.attachments[0];
+            if (attach.type === "photo" || attach.type === "animated_image") {
+                hasImage = true;
+                try {
+                    const imgResponse = await axios.get(attach.url, { responseType: 'stream' });
+                    attachment = imgResponse.data;
+                } catch(e) {
+                    console.error("فشل تحميل الصورة:", e);
+                }
+            }
+        }
+        
+        // إضافة توقيع المرسل
+        let senderName = "المطور";
+        try {
+            const userInfo = await api.getUserInfo(senderID);
+            senderName = userInfo[senderID]?.name || "المطور";
+        } catch(e) {}
+        
+        const footer = `\n━━━━━━━━━━━━━\n📨 مرسل بواسطة: ${senderName}`;
+        const finalMessage = broadcastMessage + footer;
         
         try {
             const allThreads = await api.getThreadList(200, null, ["INBOX"]);
             const groupThreads = allThreads.filter(t => t.isGroup && t.isSubscribed);
             
             let sentCount = 0;
+            let failCount = 0;
+            
             for (const group of groupThreads) {
                 if (group.threadID !== threadID) {
                     try {
-                        await api.sendMessage(broadcastMessage, group.threadID);
+                        if (hasImage && attachment) {
+                            await api.sendMessage({
+                                body: finalMessage,
+                                attachment: attachment
+                            }, group.threadID);
+                        } else {
+                            await api.sendMessage(finalMessage, group.threadID);
+                        }
                         sentCount++;
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    } catch (e) {}
-                }
-            }
-            return api.sendMessage(`تم ارسال الاذاعة الى ${sentCount} مجموعة`, threadID, messageID);
-        } catch (error) {
-            return api.sendMessage(`خطأ: ${error.message}`, threadID, messageID);
-        }
-    }
-
-    // ============= إذاعة صورة =============
-    if (action === "اذاعة_صورة" || action === "broadcast_image") {
-        if (args.length < 3) {
-            return api.sendMessage("الاستخدام: ادارة اذاعة_صورة [رابط الصورة] [الرسالة]", threadID, messageID);
-        }
-        
-        const imageUrl = args[1];
-        const caption = args.slice(2).join(" ");
-        
-        try {
-            const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-            const cachePath = path.join(__dirname, 'cache');
-            await fs.ensureDir(cachePath);
-            const imagePath = path.join(cachePath, `broadcast_${Date.now()}.jpg`);
-            await fs.writeFile(imagePath, imageResponse.data);
-            
-            const allThreads = await api.getThreadList(200, null, ["INBOX"]);
-            const groupThreads = allThreads.filter(t => t.isGroup && t.isSubscribed);
-            
-            let sentCount = 0;
-            for (const group of groupThreads) {
-                if (group.threadID !== threadID) {
-                    try {
-                        await api.sendMessage({
-                            body: caption,
-                            attachment: fs.createReadStream(imagePath)
-                        }, group.threadID);
-                        sentCount++;
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    } catch (e) {}
+                        await new Promise(resolve => setTimeout(resolve, 800));
+                    } catch (e) {
+                        failCount++;
+                    }
                 }
             }
             
-            await fs.unlink(imagePath);
-            return api.sendMessage(`تم ارسال الاذاعة بالصورة الى ${sentCount} مجموعة`, threadID, messageID);
+            let replyMsg = `✅ تم إرسال الإشعار إلى ${sentCount} مجموعة`;
+            if (failCount > 0) replyMsg += `\n⚠️ فشل الإرسال إلى ${failCount} مجموعة`;
+            if (hasImage) replyMsg += `\n🖼️ تم إرسال الإشعار مع الصورة`;
+            
+            return api.sendMessage(replyMsg, threadID, messageID);
+            
         } catch (error) {
-            return api.sendMessage(`خطأ: ${error.message}`, threadID, messageID);
+            return api.sendMessage(`❌ خطأ: ${error.message}`, threadID, messageID);
         }
     }
 
     // ============= تغيير صورة البوت =============
     if (action === "صورة_بوت" || action === "setavatar") {
-        return api.sendMessage("قم بالرد على هذه الرسالة بالصورة التي تريد تعيينها كصورة بروفايل", threadID, (err, info) => {
+        return api.sendMessage("🖼️ قم بالرد على هذه الرسالة بالصورة التي تريد تعيينها كصورة بروفايل", threadID, (err, info) => {
             if (err) return;
             Mirror.client.HakimReply.push({
                 name: module.exports.config.title,
@@ -263,7 +331,7 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
 
     // ============= تغيير بايو البوت =============
     if (action === "بايو_بوت" || action === "setbio") {
-        return api.sendMessage("قم بالرد على هذه الرسالة بالنص الذي تريد تعيينه كسيرة ذاتية", threadID, (err, info) => {
+        return api.sendMessage("✏️ قم بالرد على هذه الرسالة بالنص الذي تريد تعيينه كسيرة ذاتية", threadID, (err, info) => {
             if (err) return;
             Mirror.client.HakimReply.push({
                 name: module.exports.config.title,
@@ -320,16 +388,15 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
     }
 
     // ============= مساعدة =============
-    let helpMsg = "أوامر الإدارة المتاحة\n━━━━━━━━━━━━━\n\n";
+    let helpMsg = "📋 أوامر الإدارة المتاحة\n━━━━━━━━━━━━━\n\n";
     helpMsg += "• ادارة لاست - عرض المجموعات والتحكم بها\n";
-    helpMsg += "• ادارة حظر [ايدي] [سبب] - حظر مستخدم عالمياً\n";
-    helpMsg += "• ادارة الغاء_حظر [ايدي] - الغاء حظر مستخدم\n";
+    helpMsg += "• ادارة حظر [ايدي|@منشن|رد] [سبب] - حظر مستخدم عالمياً\n";
+    helpMsg += "• ادارة الغاء_حظر [ايدي|@منشن|رد] - الغاء حظر مستخدم\n";
     helpMsg += "• ادارة حظر_جروب [ايدي] - حظر مجموعة\n";
     helpMsg += "• ادارة الغاء_حظر_جروب [ايدي] - الغاء حظر مجموعة\n";
     helpMsg += "• ادارة غادر [ايدي] - مغادرة مجموعة\n";
     helpMsg += "• ادارة طلبات - عرض طلبات المجموعات\n";
-    helpMsg += "• ادارة اذاعة [رسالة] - ارسال لجميع المجموعات\n";
-    helpMsg += "• ادارة اذاعة_صورة [رابط] [رسالة] - ارسال صورة للجميع\n";
+    helpMsg += "• ادارة اشعار [رسالة] - ارسال اشعار لجميع المجموعات (مع دعم الرد على صورة)\n";
     helpMsg += "• ادارة صورة_بوت - تغيير صورة البوت\n";
     helpMsg += "• ادارة بايو_بوت - تغيير بايو البوت\n";
     helpMsg += "• ادارة تشغيل/ايقاف - تشغيل/ايقاف البوت\n";
@@ -367,29 +434,29 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
                 return api.sendMessage(`المجموعة "${group.name}" محظورة بالفعل`, threadID, messageID);
             }
             userData.banGroup(group.id, senderID, "تم الحظر عن طريق أمر لاست");
-            api.sendMessage(`تم حظر المجموعة "${group.name}"`, threadID, messageID);
+            api.sendMessage(`✅ تم حظر المجموعة "${group.name}"`, threadID, messageID);
             
         } else if (cmd === "الغاء_حظر") {
             if (!userData.isGroupBanned(group.id)) {
                 return api.sendMessage(`المجموعة "${group.name}" غير محظورة`, threadID, messageID);
             }
             userData.unbanGroup(group.id);
-            api.sendMessage(`تم الغاء حظر المجموعة "${group.name}"`, threadID, messageID);
+            api.sendMessage(`✅ تم إلغاء حظر المجموعة "${group.name}"`, threadID, messageID);
             
         } else if (cmd === "غادر") {
             try {
                 await api.removeUserFromGroup(api.getCurrentUserID(), group.id);
-                api.sendMessage(`تم مغادرة المجموعة "${group.name}"`, threadID, messageID);
+                api.sendMessage(`✅ تم مغادرة المجموعة "${group.name}"`, threadID, messageID);
             } catch (err) {
-                api.sendMessage(`فشل المغادرة: ${err.message}`, threadID, messageID);
+                api.sendMessage(`❌ فشل المغادرة: ${err.message}`, threadID, messageID);
             }
             
         } else if (cmd === "ضيفني") {
             try {
                 await api.addUserToGroup(senderID, group.id);
-                api.sendMessage(`تمت إضافتك إلى "${group.name}"`, threadID, messageID);
+                api.sendMessage(`✅ تمت إضافتك إلى "${group.name}"`, threadID, messageID);
             } catch (err) {
-                api.sendMessage(`فشل الإضافة: ${err.message}`, threadID, messageID);
+                api.sendMessage(`❌ فشل الإضافة: ${err.message}`, threadID, messageID);
             }
         }
         
@@ -410,7 +477,7 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
                     await new Promise(resolve => setTimeout(resolve, 500));
                 } catch(e) {}
             }
-            api.sendMessage(`تمت الموافقة على ${successCount} من أصل ${pendingData.length} طلب`, threadID, messageID);
+            api.sendMessage(`✅ تمت الموافقة على ${successCount} من أصل ${pendingData.length} طلب`, threadID, messageID);
             
         } else {
             const match = replyBody?.match(/(موافقة|رفض)\s*(\d+)/);
@@ -429,9 +496,9 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
             const accept = cmd === "موافقة";
             try {
                 await api.handleGroupRequest(group.id, accept);
-                api.sendMessage(`${accept ? "تم قبول" : "تم رفض"} طلب المجموعة "${group.name}"`, threadID, messageID);
+                api.sendMessage(`${accept ? "✅ تم قبول" : "❌ تم رفض"} طلب المجموعة "${group.name}"`, threadID, messageID);
             } catch (err) {
-                api.sendMessage(`فشل: ${err.message}`, threadID, messageID);
+                api.sendMessage(`❌ فشل: ${err.message}`, threadID, messageID);
             }
         }
         
@@ -442,7 +509,7 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
     // ===== تغيير صورة البوت =====
     if (type === "set_avatar") {
         if (!attachments || attachments.length === 0 || attachments[0].type !== "photo") {
-            return api.sendMessage("يرجى الرد بالصورة", threadID, messageID);
+            return api.sendMessage("⚠️ يرجى الرد بالصورة", threadID, messageID);
         }
         
         const imageUrl = attachments[0].url;
@@ -455,9 +522,9 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
             await fs.writeFile(imagePath, response.data);
             await api.changeAvatar(fs.createReadStream(imagePath));
             await fs.unlink(imagePath);
-            api.sendMessage("تم تغيير صورة البوت", threadID, messageID);
+            api.sendMessage("✅ تم تغيير صورة البوت", threadID, messageID);
         } catch (err) {
-            api.sendMessage(`فشل: ${err.message}`, threadID, messageID);
+            api.sendMessage(`❌ فشل: ${err.message}`, threadID, messageID);
         }
         
         try { await api.unsendMessage(HakimReply.messageID); } catch(e) {}
@@ -467,14 +534,14 @@ module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
     // ===== تغيير بايو البوت =====
     if (type === "set_bio") {
         if (!body || body.length < 3) {
-            return api.sendMessage("النص قصير جداً", threadID, messageID);
+            return api.sendMessage("⚠️ النص قصير جداً (يجب أن يكون 3 أحرف على الأقل)", threadID, messageID);
         }
         
         try {
             await api.changeBio(body);
-            api.sendMessage(`تم تغيير البايو إلى:\n${body}`, threadID, messageID);
+            api.sendMessage(`✅ تم تغيير البايو إلى:\n\n${body}`, threadID, messageID);
         } catch (err) {
-            api.sendMessage(`فشل: ${err.message}`, threadID, messageID);
+            api.sendMessage(`❌ فشل: ${err.message}`, threadID, messageID);
         }
         
         try { await api.unsendMessage(HakimReply.messageID); } catch(e) {}

@@ -1,19 +1,29 @@
 const axios = require('axios');
 const fs = require('fs-extra');
 const path = require('path');
-const { createCanvas, loadImage } = require('canvas'); 
 
 module.exports.config = {
     title: "احداث",
     release: "2.1.0",
     clearance: 1,
     author: "Hakim Tracks",
-    summary: "إرسال رسالة ترحيب مع صورة عند انضمام عضو جديد، وإشعارات للأحداث الأخرى.",
+    summary: "إرسال رسالة ترحيب عند انضمام أعضاء جدد",
     section: "الــمـطـور",
     syntax: "on/off",
     delay: 5,
 };
 
+function getFormattedDate() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
 
 async function getAvatarUrl(userID) {
     try {
@@ -29,189 +39,159 @@ async function getAvatarUrl(userID) {
     }
 }
 
-
-async function downloadImage(url, filename) {
-    const cacheDir = path.join(__dirname, 'cache');
-    await fs.ensureDir(cacheDir);
-    const filePath = path.join(cacheDir, filename);
-    const writer = fs.createWriteStream(filePath);
-    const response = await axios({ url, responseType: 'stream' });
-    response.data.pipe(writer);
-    return new Promise((resolve, reject) => {
-        writer.on('finish', () => resolve(filePath));
-        writer.on('error', reject);
-    });
-}
-
 module.exports.HakimEvent = async function({ api, event }) {
     const { logMessageType, logMessageData, author, threadID } = event;
     const botID = api.getCurrentUserID();
+    const config = Mirror.client.config;
+    const prefix = config.PREFIX || "✨";
+    const botName = config.BOTNAME || "Mirror Bot";
+    const currentTime = getFormattedDate();
 
     if (author === botID) return;
 
     try {
         switch (logMessageType) {
             case "log:subscribe": {
-                
+                // تم إضافة البوت نفسه
                 if (logMessageData.addedParticipants.some(p => p.userFbId === botID)) {
                     try {
-                        await api.changeNickname(`❴ . ❵ • ℳ𝒾𝓇𝓇ℴ𝓇 ℬℴ𝓉`, threadID, botID);
-                    } catch (e) {
-                        console.error("فشل تغيير الكنية:", e);
-                    }
+                        await api.changeNickname(`${prefix} ◈ ${botName}`, threadID, botID);
+                    } catch(e) {}
 
-                    
                     const threadInfo = await api.getThreadInfo(threadID);
-                    const groupName = threadInfo.threadName || "المجموعة";
-                    const memberCount = threadInfo.participantIDs.length;
-                    const adminCount = threadInfo.adminIDs.length;
-                    const currentTime = new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
-
-                    const botName = "Mirror Bot";
-                    const devName = "Hakim Tracks";
-
                     const msg = `◊•─┄┅═══❁  🌺  ❁═══┅┄─•◊
-○ ¦  اشــعـــــار    تمت اضافة البوت بنجاح 
-○ ¦  الــاســــــم  ${botName}
-○ ¦  الـمـطــوࢪ   ${devName}
-○ ¦  الـمجموعة  ${groupName}
-○ ¦  الاعــضــاء  ${memberCount}
-○ ¦  الادمـــــن  ${adminCount}
-○ ¦  الــوقــت   ${currentTime}
-╮─[ ◢◤ الأوامر المفيدة ◢◤ ]─╭
-│  المطور – معلومات عن البوت 
-│  ميرور – دردشة مع الذكاء الاصطناعي 
-│  ابتايم – وقت تشغيل البوت 
-╯──────────────────╰\n`;
+○ ¦ تمت اضافة البوت بنجاح
+○ ¦ الاسم ${botName}
+○ ¦ البريفكس ${prefix}
+○ ¦ المجموعة ${threadInfo.threadName || "المجموعة"}
+○ ¦ الاعضاء ${threadInfo.participantIDs.length}
+○ ¦ التاريخ ${currentTime}
+╮─[ الأوامر ]─╭
+│ ${prefix}المطور – معلومات عن البوت
+│ ${prefix}ميرور – دردشة مع الذكاء
+╯──────────╰`;
 
-                    const imagePath = await downloadImage(
-                        "https://i.postimg.cc/63MKnXXp/received-912578775020631.jpg",
-                        "bot_welcome.jpg"
-                    );
-
-                    await api.sendMessage(
-                        { body: msg, attachment: fs.createReadStream(imagePath) },
-                        threadID,
-                        () => fs.unlinkSync(imagePath)
-                    );
+                    const imagePath = path.join(__dirname, '..', '..', 'avatars', `${botID}.png`);
+                    let attachment = null;
+                    
+                    if (fs.existsSync(imagePath)) {
+                        attachment = fs.createReadStream(imagePath);
+                    } else {
+                        const avatarUrl = await getAvatarUrl(botID);
+                        const response = await axios.get(avatarUrl, { responseType: 'stream' });
+                        attachment = response.data;
+                    }
+                    
+                    await api.sendMessage({ body: msg, attachment: attachment }, threadID);
                     return;
                 }
 
-                
-                for (const participant of logMessageData.addedParticipants) {
-                    if (participant.userFbId === botID) continue; 
+                // إضافة أعضاء جدد
+                const newMembers = logMessageData.addedParticipants.filter(p => p.userFbId !== botID);
+                if (newMembers.length === 0) return;
 
-                    const { userFbId, fullName } = participant;
-                    const threadInfo = await api.getThreadInfo(threadID);
+                const threadInfo = await api.getThreadInfo(threadID);
+                const groupName = threadInfo.threadName || "المجموعة";
+                const memberCount = threadInfo.participantIDs.length;
 
+                // حالة: عضو واحد - ترحيب فردي
+                if (newMembers.length === 1) {
+                    const member = newMembers[0];
                     
-                    const groupName = threadInfo.threadName || "المجموعة";
-                    const memberCount = threadInfo.participantIDs.length;
-                    const currentTime = new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
+                    // الحصول على صورة العضو
+                    let userAvatar = null;
+                    try {
+                        const avatarUrl = await getAvatarUrl(member.userFbId);
+                        const response = await axios.get(avatarUrl, { responseType: 'stream' });
+                        userAvatar = response.data;
+                    } catch(e) {}
 
-                    
-                    const backgrounds = [
-                        'https://i.imgur.com/dDSh0wc.jpeg',
-                        'https://i.imgur.com/UucSRWJ.jpeg',
-                        'https://i.imgur.com/OYzHKNE.jpeg',
-                        'https://i.imgur.com/V5L9dPi.jpeg',
-                        'https://i.imgur.com/M7HEAMA.jpeg', 
-                        'https://i.postimg.cc/6Qg98z6c/afad52c0-2045-11f1-9b80-ed972216ff4e.jpg',
-                        'https://i.postimg.cc/G3jZNq0G/129b1930-2046-11f1-9b80-ed972216ff4e.jpg',
-                        'https://i.postimg.cc/BQ6wz3B9/16b24f20-2046-11f1-9b80-ed972216ff4e.jpg',        
-                    ];
-                    const randomBG = backgrounds[Math.floor(Math.random() * backgrounds.length)];
-                    const background = await loadImage(randomBG);
-
-                    
-                    const avatarURL = await getAvatarUrl(userFbId);
-                    const avatarData = await axios.get(avatarURL, { responseType: "arraybuffer" });
-                    const avatar = await loadImage(avatarData.data);
-
-                    
-                    const canvas = createCanvas(background.width, background.height);
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
-
-                    
-                    const r = 90;
-                    const x = canvas.width / 2;
-                    const y = canvas.height / 2 - 80;
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(x, y, r, 0, Math.PI * 2);
-                    ctx.clip();
-                    ctx.drawImage(avatar, x - r, y - r, r * 2, r * 2);
-                    ctx.restore();
-
-                    
-                    ctx.font = "bold 38px Arial";
-                    ctx.fillStyle = "#ffffff";
-                    ctx.textAlign = "center";
-                    ctx.fillText(fullName, x, y + r + 40);
-
-                    
-                    const cacheDir = path.join(__dirname, 'cache');
-                    await fs.ensureDir(cacheDir);
-                    const imgPath = path.join(cacheDir, `join_${userFbId}.png`);
-                    fs.writeFileSync(imgPath, canvas.toBuffer());
-
-                    
                     const textMsg = `╮─◦─◦─◦─◦─◦─◦─◦─◦─◦─◦─◦─╭
-○ ¦  اهلا بــك يــا  『 ${fullName} 』
-○ ¦  في مجموعة  『 ${groupName} 』
-○ ¦  الاعــضــــاء  『 ${memberCount} 』
-○ ¦  الوقـت الآن  『 ${currentTime} 』
-○ ¦  تـــــذكــيـــر  『 واذكـر الـلـه ذكـرا كـثيـرا 🤍 』
+○ ¦ اهلا وسهلا بك
+○ ¦ ${member.fullName}
+○ ¦ في مجموعة ${groupName}
+○ ¦ الاعضاء الان ${memberCount}
+○ ¦ التاريخ ${currentTime}
 ╯─◦─◦─◦─◦─◦─◦─◦─◦─◦─◦─◦─╰`;
 
-                    await api.sendMessage(
-                        { body: textMsg, attachment: fs.createReadStream(imgPath) },
-                        threadID,
-                        () => fs.unlinkSync(imgPath)
-                    );
+                    if (userAvatar) {
+                        await api.sendMessage({ body: textMsg, attachment: userAvatar }, threadID);
+                    } else {
+                        await api.sendMessage(textMsg, threadID);
+                    }
+                    return;
+                }
+
+                // حالة: أكثر من عضو - ترحيب جماعي
+                const memberNames = newMembers.map(m => m.fullName);
+                let membersList = "";
+                
+                if (newMembers.length === 2) {
+                    membersList = `${memberNames[0]} و ${memberNames[1]}`;
+                } else {
+                    const last = memberNames.pop();
+                    membersList = `${memberNames.join("، ")} و ${last}`;
+                }
+
+                // الحصول على صورة المجموعة
+                let groupImage = null;
+                try {
+                    const threadInfoFull = await api.getThreadInfo(threadID);
+                    if (threadInfoFull.imageSrc) {
+                        const response = await axios.get(threadInfoFull.imageSrc, { responseType: 'stream' });
+                        groupImage = response.data;
+                    }
+                } catch(e) {}
+
+                const textMsg = `╮─◦─◦─◦─◦─◦─◦─◦─◦─◦─◦─◦─╭
+○ ¦ اهلا وسهلا بالاعضاء الجدد
+○ ¦ ${membersList}
+○ ¦ انضموا إلى ${groupName}
+○ ¦ الاعضاء الان ${memberCount}
+○ ¦ التاريخ ${currentTime}
+╯─◦─◦─◦─◦─◦─◦─◦─◦─◦─◦─◦─╰`;
+
+                if (groupImage) {
+                    await api.sendMessage({ body: textMsg, attachment: groupImage }, threadID);
+                } else {
+                    await api.sendMessage(textMsg, threadID);
                 }
                 break;
             }
 
             case "log:unsubscribe": {
-                const leftParticipantId = logMessageData.leftParticipantFbId;
+                if (logMessageData.leftParticipantFbId === botID) return;
                 try {
-                    const userInfo = await api.getUserInfo(leftParticipantId);
-                    const userName = userInfo[leftParticipantId].name;
-                    api.sendMessage(`وداعًا ${userName}، لقد غادر/ت المجموعة.`, threadID);
-                } catch (e) {
-                    api.sendMessage("أحد الأعضاء غادر المجموعة.", threadID);
+                    const userInfo = await api.getUserInfo(logMessageData.leftParticipantFbId);
+                    api.sendMessage(`وداعا ${userInfo[logMessageData.leftParticipantFbId].name}\nالتاريخ ${currentTime}`, threadID);
+                } catch(e) {
+                    api.sendMessage(`أحد الأعضاء غادر المجموعة.\nالتاريخ ${currentTime}`, threadID);
                 }
                 break;
             }
 
             case "log:thread-admins": {
-                const targetID = logMessageData.TARGET_ID;
-                const adminAction = logMessageData.ADMIN_EVENT;
+                if (logMessageData.TARGET_ID === botID) return;
                 try {
-                    const userInfo = await api.getUserInfo(targetID);
-                    const userName = userInfo[targetID].name;
-                    let message = "";
-                    if (adminAction === "add_admin") {
-                        message = `◈ ¦ إشعار: تمت ترقية ${userName} ليصبح مشرفًا.`;
-                    } else if (adminAction === "remove_admin") {
-                        message = `◈ ¦ إشعار: تمت إزالة ${userName} من الإشراف.`;
-                    }
-                    if (message) api.sendMessage(message, threadID);
-                } catch (e) {
-                    api.sendMessage("تم تحديث قائمة المشرفين.", threadID);
-                }
+                    const userInfo = await api.getUserInfo(logMessageData.TARGET_ID);
+                    const action = logMessageData.ADMIN_EVENT === "add_admin" ? "ترقية" : "ازالة";
+                    api.sendMessage(`◈ ${action} ${userInfo[logMessageData.TARGET_ID].name}\nالتاريخ ${currentTime}`, threadID);
+                } catch(e) {}
                 break;
             }
-
             
+            case "log:thread-name": {
+                try {
+                    await api.changeNickname(`${prefix} ◈ ${botName}`, threadID, botID);
+                } catch(e) {}
+                break;
+            }
         }
     } catch (error) {
-        console.error("حدث خطأ في معالجة الحدث:", error);
+        console.error("خطأ:", error);
     }
 };
 
 module.exports.HakimRun = async function({ api, event }) {
-    api.sendMessage("هذا الأمر يعمل تلقائيًا مع أحداث المجموعة. لا حاجة لتفعيله يدويًا.", event.threadID, event.messageID);
+    api.sendMessage("هذا الأمر يعمل تلقائياً مع أحداث المجموعة.", event.threadID, event.messageID);
 };
