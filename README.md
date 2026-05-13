@@ -1,5 +1,5 @@
 # Mirror Bot 
-
+# Developed By Hakim Tracks 
 ![Mirror Bot Agent](https://i.imgur.com/aAO58sQ.jpeg)
 
 ## معلومات البوت
@@ -22,4 +22,5 @@
 | Facebook | 
 | :---: | 
 | <a href="https://www.facebook.com/Hakim.Tracks.Ch"><img src="https://i.postimg.cc/fyLsTW4T/qr-code-(2).png" /></a>
+
 
