@@ -43,7 +43,7 @@ module.exports.HakimEvent = async function({ api, event }) {
     const { logMessageType, logMessageData, author, threadID } = event;
     const botID = api.getCurrentUserID();
     const config = Mirror.client.config;
-    const prefix = config.PREFIX;
+    const prefix = config.PREFIX || " ";
     const botName = config.BOTNAME || "Mirror Bot";
     const currentTime = getFormattedDate();
 
@@ -55,7 +55,7 @@ module.exports.HakimEvent = async function({ api, event }) {
                 // تم إضافة البوت نفسه
                 if (logMessageData.addedParticipants.some(p => p.userFbId === botID)) {
                     try {
-                        await api.changeNickname(`[ ${prefix || ✨} ] ◈ ${botName}`, threadID, botID);
+                        await api.changeNickname(`[ ${prefix} ] ◈ ${botName}`, threadID, botID);
                     } catch(e) {}
 
                     const threadInfo = await api.getThreadInfo(threadID);
@@ -174,7 +174,7 @@ module.exports.HakimEvent = async function({ api, event }) {
             
             case "log:thread-name": {
                 try {
-                    await api.changeNickname(`[ ${prefix || ✨} ] ◈ ${botName}`, threadID, botID);
+                    await api.changeNickname(`[ ${prefix} ] ◈ ${botName}`, threadID, botID);
                 } catch(e) {}
                 break;
             }

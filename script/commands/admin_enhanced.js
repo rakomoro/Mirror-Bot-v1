@@ -440,7 +440,7 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
         }
     }
 
-    let helpMsg = "◆━━━━━[ اوامر الادارة المتاحة ]━━━━━◆\n\n";
+    let helpMsg = "◆━━━[ اوامر الادارة ]━━━◆\n\n";
     helpMsg += "- ادارة لاست - عرض المجموعات والتحكم بها\n";
     helpMsg += "- ادارة بان [ايدي|@منشن|رد] [سبب] - بان مستخدم\n";
     helpMsg += "- ادارة نوبان [ايدي|@منشن|رد] - الغاء حظر مستخدم\n";
@@ -454,7 +454,7 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
     helpMsg += "- ادارة بايو_بوت - تغيير بايو البوت\n";
     helpMsg += "- ادارة تشغيل/ايقاف - تشغيل/ايقاف البوت\n";
     helpMsg += "- ادارة احصائيات - عرض احصائيات البوت\n\n";
-    helpMsg += "○━━━━━━━━━━━━━━━━━━━━━━━━━○";
+    helpMsg += "○━━━━━━━━━━━━━━━━━━━━━━━○";
     
     return api.sendMessage(helpMsg, threadID, messageID);
 };
