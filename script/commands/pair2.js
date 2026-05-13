@@ -11,7 +11,7 @@ const getStreamFromURL = async (url) => {
 };
 
 module.exports.config = {
-    title: 'زورج',
+    title: 'زواج',
     release: '1.7',
     clearance: 0,
     author: "Hakim Tracks",

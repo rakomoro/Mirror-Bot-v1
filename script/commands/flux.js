@@ -42,7 +42,7 @@ module.exports.HakimRun = async ({ api, event, args }) => {
         api.setMessageReaction('✅', messageID, () => {}, true);
 
         api.sendMessage({
-            body: '✅ 𝐇𝐞𝐫𝐞' + "'" + 's 𝐲𝐨𝐮𝐫 𝐟𝐥𝐮𝐱 𝐢𝐦𝐚𝐠𝐞 𝐛𝐚𝐛𝐲 😘',
+            body: '✅ تفضل تم التوليد',
             attachment: fs.createReadStream(filePath)
         }, threadID, () => {
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);

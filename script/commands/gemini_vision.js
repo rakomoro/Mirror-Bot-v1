@@ -26,7 +26,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
     if (type === "message_reply" && messageReply.attachments.length > 0 && (messageReply.attachments[0].type === "photo" || messageReply.attachments[0].type === "sticker")) {
         imgUrl = messageReply.attachments[0].url;
     } else {
-        return api.sendMessage(deco.error("يرجى الرد على صورة لرفع جودتها."), threadID, messageID);
+        return api.sendMessage(deco.error("يرجى الرد على صورة."), threadID, messageID);
     }
 
     const prompt = args.join(" ") || "ماذا يوجد في هذه الصورة؟";

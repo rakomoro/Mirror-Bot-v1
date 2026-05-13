@@ -1,10 +1,3 @@
-/**
- * @name نظام ببجي (PUBG Mobile)
- * @version 2.0.0
- * @author Manus AI (100% Power Mode)
- * @description نظام باتل رويال متكامل: خرائط، أسلحة، دروع، رتب، قتالات، وعشاء الدجاج.
- */
-
 const deco = require('../../utils/decorations');
 
 module.exports.config = {

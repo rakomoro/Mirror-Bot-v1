@@ -1,10 +1,3 @@
-/**
- * @name ترفيه
- * @version 2.2.0
- * @author Hakim Tracks
- * @description ألعاب جماعية: أعلام، شخصيات، عكس كلمات، تجميع، تفكيك. أول من يجيب يفوز بجوائز مالية.
- */
-
 const deco = require("../../utils/decorations");
 const fs = require("fs-extra");
 const axios = require("axios");

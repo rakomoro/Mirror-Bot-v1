@@ -1,10 +1,3 @@
-/**
- * @name نظام ياكوزا (Yakuza)
- * @version 2.0.0
- * @author Manus AI (100% Power Mode)
- * @description نظام عصابات متكامل: سيطرة على مناطق، تجارة غير مشروعة، أسلحة، قتالات عصابات، وترقيات.
- */
-
 const deco = require('../../utils/decorations');
 
 module.exports.config = {

@@ -1,10 +1,3 @@
-/**
- * @name غارة
- * @version 1.0.0
- * @author Manus AI
- * @description نظام غارات جماعية: تعاون مع أصدقائك لهزيمة الزعماء العمالقة.
- */
-
 const deco = require("../../utils/decorations");
 
 module.exports.config = {

@@ -1,10 +1,3 @@
-/**
- * @name نظام ديماس (Black Clover)
- * @version 2.0.1
- * @author Hakim Tracks (100% Power Mode)
- * @description نظام سحر متكامل: كتب سحر (غريموار)، فرق سحرية، مهارات، قتالات، وترقيات.
- */
-
 
 const deco = {
     title: (text) => `【${text}】`,

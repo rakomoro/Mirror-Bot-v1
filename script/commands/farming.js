@@ -1,10 +1,3 @@
-/**
- * @name زراعة
- * @version 2.0.0
- * @author Manus AI
- * @description نظام زراعة متقدم: فصول، أدوات، مواشي، وسوق متغير.
- */
-
 const deco = require("../../utils/decorations");
 
 module.exports.config = {

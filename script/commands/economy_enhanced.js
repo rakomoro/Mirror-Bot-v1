@@ -1,9 +1,4 @@
-/**
- * @name اقتصاد
- * @version 2.1.0
- * @author Hakim Tracks
- * @description نظام اقتصادي متقدم يشمل وظائف، تجارة، قمار، استثمارات، مكافآت يومية، وتعدين.
- */
+
 
 const deco = require("../../utils/decorations");
 

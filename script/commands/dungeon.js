@@ -1,9 +1,3 @@
-/**
- * @name نظام مغارة الظلال (Solo Leveling)
- * @version 2.1.0
- * @author Hakim Tracks (100% Power Mode) 
- * @description نظام RPG متكامل: بوابات، وحوش، مخزن، أسلحة، دروع، جرعات، مهارات، قتالات فردية وجماعية، رتب، وجوائز.
- */
 
 const deco = require("../../utils/decorations");
 const fs = require("fs-extra");

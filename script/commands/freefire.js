@@ -1,10 +1,3 @@
-/**
- * @name نظام فري فاير (Free Fire)
- * @version 2.0.0
- * @author Hakim Tracks (100% Power Mode)
- * @description نظام باتل رويال متكامل: شخصيات بمهارات، حيوانات أليفة، رتب، وقراند ماستر.
- */
-
 const deco = require('../../utils/decorations');
 
 module.exports.config = {

@@ -55,15 +55,15 @@ module.exports.HakimEvent = async function({ api, event }) {
                 // تم إضافة البوت نفسه
                 if (logMessageData.addedParticipants.some(p => p.userFbId === botID)) {
                     try {
-                        await api.changeNickname(`${prefix} ◈ ${botName}`, threadID, botID);
+                        await api.changeNickname(`[ ${prefix} ] ◈ ${botName}`, threadID, botID);
                     } catch(e) {}
 
                     const threadInfo = await api.getThreadInfo(threadID);
                     const msg = `◊•─┄┅═══❁  🌺  ❁═══┅┄─•◊
 ○ ¦ تمت اضافة البوت بنجاح
 ○ ¦ الاسم ${botName}
-○ ¦ البريفكس ${prefix}
-○ ¦ المجموعة ${threadInfo.threadName || "المجموعة"}
+○ ¦ البادئة ${prefix}
+○ ¦ المجموعة ${threadInfo.threadName || "بدون اسم"}
 ○ ¦ الاعضاء ${threadInfo.participantIDs.length}
 ○ ¦ التاريخ ${currentTime}
 ╮─[ الأوامر ]─╭
@@ -170,15 +170,7 @@ module.exports.HakimEvent = async function({ api, event }) {
                 break;
             }
 
-            case "log:thread-admins": {
-                if (logMessageData.TARGET_ID === botID) return;
-                try {
-                    const userInfo = await api.getUserInfo(logMessageData.TARGET_ID);
-                    const action = logMessageData.ADMIN_EVENT === "add_admin" ? "ترقية" : "ازالة";
-                    api.sendMessage(`◈ ${action} ${userInfo[logMessageData.TARGET_ID].name}\nالتاريخ ${currentTime}`, threadID);
-                } catch(e) {}
-                break;
-            }
+            
             
             case "log:thread-name": {
                 try {
