@@ -105,16 +105,21 @@ async function downloadAvatar(userID, url) {
 const BanSystem = {
     // حظر مستخدم عالمياً
     globalBan: (userId, bannedBy, reason = "لا يوجد سبب", duration = null) => {
-        const expiresAt = duration ? Date.now() + (duration * 1000) : null;
-        const isPermanent = !duration;
-        
-        const stmt = db.prepare(`
-            INSERT OR REPLACE INTO global_bans (user_id, banned_by, reason, banned_at, expires_at, is_permanent)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `);
-        stmt.run(userId, bannedBy, reason, Date.now(), expiresAt, isPermanent ? 1 : 0);
-        logger.loader(`تم حظر المستخدم ${userId} عالمياً بواسطة ${bannedBy}`, 'ban');
-        return true;
+        try {
+            const expiresAt = duration ? Date.now() + (duration * 1000) : null;
+            const isPermanent = !duration;
+            
+            const stmt = db.prepare(`
+                INSERT OR REPLACE INTO global_bans (user_id, banned_by, reason, banned_at, expires_at, is_permanent)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `);
+            stmt.run(String(userId), String(bannedBy), reason, Date.now(), expiresAt, isPermanent ? 1 : 0);
+            logger.loader(`تم حظر المستخدم ${userId} عالمياً بواسطة ${bannedBy}`, 'ban');
+            return true;
+        } catch (error) {
+            logger.error(`خطأ في تنفيذ الحظر العالمي: ${error.message}`);
+            throw error;
+        }
     },
     
     // إلغاء الحظر العالمي
@@ -127,18 +132,23 @@ const BanSystem = {
     
     // التحقق من الحظر العالمي
     isGloballyBanned: (userId) => {
-        const stmt = db.prepare("SELECT * FROM global_bans WHERE user_id = ?");
-        const ban = stmt.get(userId);
-        
-        if (!ban) return false;
-        
-        // التحقق من انتهاء المدة
-        if (!ban.is_permanent && ban.expires_at && ban.expires_at < Date.now()) {
-            BanSystem.globalUnban(userId);
+        try {
+            const stmt = db.prepare("SELECT * FROM global_bans WHERE user_id = ?");
+            const ban = stmt.get(String(userId));
+            
+            if (!ban) return false;
+            
+            // التحقق من انتهاء المدة
+            if (!ban.is_permanent && ban.expires_at && ban.expires_at < Date.now()) {
+                BanSystem.globalUnban(userId);
+                return false;
+            }
+            
+            return ban;
+        } catch (error) {
+            logger.error(`خطأ في التحقق من الحظر العالمي: ${error.message}`);
             return false;
         }
-        
-        return ban;
     },
     
     // حظر مجموعة

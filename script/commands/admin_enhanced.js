@@ -52,30 +52,35 @@ module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
             );
         }
         
-        const targetID = target.id;
+        const targetID = String(target.id);
         const reason = args.slice(2).join(" ") || "لا يوجد سبب";
         
         if (config.ADMINBOT.includes(targetID)) {
             return api.sendMessage("لا يمكن حظر مطور آخر!", threadID, messageID);
         }
         
-        const isBanned = userData.isGloballyBanned(targetID);
-        if (isBanned) {
-            return api.sendMessage(`المستخدم ${targetID} محظور بالفعل`, threadID, messageID);
-        }
-        
-        userData.globalBan(targetID, senderID, reason);
-        
-        let userName = targetID;
         try {
-            const userInfo = await api.getUserInfo(targetID);
-            userName = userInfo[targetID]?.name || targetID;
-        } catch(e) {}
-        
-        return api.sendMessage(
-            `✅ تم حظر المستخدم عالمياً\n\n👤 المستخدم: ${userName}\n🆔 المعرف: ${targetID}\n📝 السبب: ${reason}`,
-            threadID, messageID
-        );
+            const isBanned = userData.isGloballyBanned(targetID);
+            if (isBanned) {
+                return api.sendMessage(`المستخدم ${targetID} محظور بالفعل عالمياً.`, threadID, messageID);
+            }
+            
+            userData.globalBan(targetID, senderID, reason);
+            
+            let userName = targetID;
+            try {
+                const userInfo = await api.getUserInfo(targetID);
+                userName = userInfo[targetID]?.name || targetID;
+            } catch(e) {}
+            
+            return api.sendMessage(
+                `✅ تم حظر المستخدم عالمياً\n\n👤 المستخدم: ${userName}\n🆔 المعرف: ${targetID}\n📝 السبب: ${reason}`,
+                threadID, messageID
+            );
+        } catch (error) {
+            console.error(error);
+            return api.sendMessage(`❌ حدث خطأ أثناء محاولة الحظر: ${error.message}`, threadID, messageID);
+        }
     }
 
     // ============= الغاء حظر مستخدم =============
