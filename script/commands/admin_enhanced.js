@@ -1,11 +1,6 @@
 const fs = require("fs-extra");
 const path = require("path");
 const axios = require("axios");
-const deco = require("../../utils/decorations");
-
-
-if (!global.bannedUsers) global.bannedUsers = new Set();
-if (!global.bannedGroups) global.bannedGroups = new Set();
 
 module.exports.config = {
     title: "ادارة",
@@ -14,392 +9,475 @@ module.exports.config = {
     author: "Hakim Tracks",
     summary: "أوامر إدارية متقدمة للتحكم بالبوت والمجموعات",
     section: "الــمـطـور",
-    syntax: "ادارة [مجموعات|مغادرة|اسم_مجموعة|صورة_مجموعة|اذاعة|اذاعة_صورة|صورة_بوت|بايو_بوت|طلبات_صداقة|قبول_صداقة|رفض_صداقة|طلبات_مجموعات|قبول_مجموعة|رفض_مجموعة|حظر|إلغاء_حظر|حظر_جروب|إلغاء_حظر_جروب|تشغيل|ايقاف|إحصائيات]",
+    syntax: "ادارة [لاست|ضيفني|حظر|الغاء_حظر|حظر_جروب|الغاء_حظر_جروب|غادر|اذاعة|اذاعة_صورة|صورة_بوت|بايو_بوت|طلبات|تشغيل|ايقاف|احصائيات]",
     delay: 5,
 };
 
-module.exports.HakimRun = async ({ api, event, args, config }) => {
+module.exports.HakimRun = async ({ api, event, args, config, userData }) => {
     const { threadID, messageID, senderID } = event;
-    const subCommand = args[0]?.toLowerCase();
-
+    const action = args[0]?.toLowerCase();
 
     if (!config.ADMINBOT.includes(senderID)) {
-        return api.sendMessage(deco.error("🚫 ليس لديك الصلاحية لاستخدام هذا الأمر."), threadID, messageID);
+        return api.sendMessage("🚫 ليس لديك الصلاحية لاستخدام هذا الأمر.", threadID, messageID);
     }
 
-    switch (subCommand) {
-
-        case "ايقاف":
-        case "stop":
-            global.isBotActive = false;
-            return api.sendMessage(
-                deco.titlePremium("🛑 تم إيقاف البوت") + "\n\n" +
-                deco.lineStar("البوت الآن في وضع السكون") + "\n" +
-                deco.lineStar("لتشغيله مجدداً: ادارة تشغيل"),
-                threadID,
-                messageID
-            );
-
-        case "تشغيل":
-        case "start":
-            global.isBotActive = true;
-            return api.sendMessage(
-                deco.titlePremium("✅ تم تشغيل البوت") + "\n\n" +
-                deco.lineStar("البوت الآن نشط وجاهز للعمل") + "\n" +
-                deco.lineStar("استعد للارتقاء لمستوى الـ Monarch! 👑"),
-                threadID,
-                messageID
-            );
-
-        case "إحصائيات":
-        case "stats":
-            const uptime = Date.now() - Mirror.client.startTime;
-            const uptimeHours = Math.floor(uptime / 3600000);
-            const uptimeMinutes = Math.floor((uptime % 3600000) / 60000);
+    // ============= أمر لاست (عرض المجموعات) =============
+    if (action === "لاست" || action === "groups" || action === "list") {
+        try {
+            const allThreads = await api.getThreadList(200, null, ["INBOX"]);
+            const groupThreads = allThreads.filter(t => t.isGroup && t.isSubscribed);
             
-            let stats = deco.titlePremium("📊 إحصائيات البوت") + "\n\n";
-            stats += deco.lineStar(`عدد الأوامر: ${Mirror.client.commands.size}`) + "\n";
-            stats += deco.lineStar(`عدد الأحداث: ${Mirror.client.events.size}`) + "\n";
-            stats += deco.lineStar(`وقت التشغيل: ${uptimeHours}س ${uptimeMinutes}د`) + "\n";
-            stats += deco.lineStar(`المستخدمون المحظورون: ${global.bannedUsers.size}`) + "\n";
-            stats += deco.lineStar(`المجموعات المحظورة: ${global.bannedGroups.size}`) + "\n";
-            stats += deco.lineStar(`حالة البوت: ${global.isBotActive ? "🟢 نشط" : "🔴 معطل"}`) + "\n";
+            if (groupThreads.length === 0) {
+                return api.sendMessage("البوت ليس موجوداً في أي مجموعة حالياً", threadID, messageID);
+            }
             
-            return api.sendMessage(stats, threadID, messageID);
-
-
-        case "حظر":
-        case "ban":
-            const targetBanID = args[1];
-            if (!targetBanID) {
-                return api.sendMessage(deco.error("يرجى تحديد معرف المستخدم: ادارة حظر [معرف]"), threadID, messageID);
+            let msg = "قائمة المجموعات التي فيها البوت\n━━━━━━━━━━━━━\n\n";
+            const groupsData = [];
+            
+            for (let i = 0; i < groupThreads.length; i++) {
+                const group = groupThreads[i];
+                msg += `${i + 1}. ${group.name || "مجموعة بدون اسم"}\n`;
+                msg += `   ايدي: ${group.threadID}\n`;
+                msg += `   الاعضاء: ${group.participantIDs.length}\n\n`;
+                groupsData.push({
+                    id: group.threadID,
+                    name: group.name || "مجموعة بدون اسم",
+                    index: i + 1,
+                    participantIDs: group.participantIDs
+                });
             }
-            global.bannedUsers.add(targetBanID);
-            return api.sendMessage(deco.success(`🚫 تم حظر المستخدم: ${targetBanID}`), threadID, messageID);
-
-        case "إلغاء_حظر":
-        case "unban":
-            const targetUnbanID = args[1];
-            if (!targetUnbanID) {
-                return api.sendMessage(deco.error("يرجى تحديد معرف المستخدم: ادارة إلغاء_حظر [معرف]"), threadID, messageID);
-            }
-            global.bannedUsers.delete(targetUnbanID);
-            return api.sendMessage(deco.success(`✅ تم إلغاء حظر المستخدم: ${targetUnbanID}`), threadID, messageID);
-
-        case "حظر_جروب":
-        case "ban_group":
-            const targetBanGroupID = args[1];
-            if (!targetBanGroupID) {
-                return api.sendMessage(deco.error("يرجى تحديد معرف المجموعة: ادارة حظر_جروب [معرف]"), threadID, messageID);
-            }
-            global.bannedGroups.add(targetBanGroupID);
-            return api.sendMessage(deco.success(`🚫 تم حظر المجموعة: ${targetBanGroupID}`), threadID, messageID);
-
-        case "إلغاء_حظر_جروب":
-        case "unban_group":
-            const targetUnbanGroupID = args[1];
-            if (!targetUnbanGroupID) {
-                return api.sendMessage(deco.error("يرجى تحديد معرف المجموعة: ادارة إلغاء_حظر_جروب [معرف]"), threadID, messageID);
-            }
-            global.bannedGroups.delete(targetUnbanGroupID);
-            return api.sendMessage(deco.success(`✅ تم إلغاء حظر المجموعة: ${targetUnbanGroupID}`), threadID, messageID);
-
-
-        case "مجموعات":
-        case "groups":
-            try {
-                const threadList = await api.getThreadList(200, null, ["INBOX"]);
-                let msg = deco.title("📋 قائمة المجموعات التي يتواجد بها البوت") + "\n\n";
-                let count = 0;
-                for (const thread of threadList) {
-                    if (thread.isGroup) { 
-                        msg += deco.line(`- ${thread.name} (ID: ${thread.threadID})`) + "\n";
-                        count++;
-                    }
-                }
-                if (count === 0) {
-                    msg += deco.line("لا يتواجد البوت في أي مجموعات.");
-                }
-                return api.sendMessage(msg, threadID, messageID);
-            } catch (error) {
-                console.error("Error getting thread list:", error);
-                return api.sendMessage(deco.error("حدث خطأ أثناء جلب قائمة المجموعات."), threadID, messageID);
-            }
-
-        case "مغادرة":
-        case "leave":
-            if (args.length < 2) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة مغادرة [threadID]"), threadID, messageID);
-            }
-            const leaveThreadID = args[1];
-            try {
-                await api.removeUserFromGroup(api.getCurrentUserID(), leaveThreadID);
-                return api.sendMessage(deco.success(`✅ تم مغادرة المجموعة بنجاح: ${leaveThreadID}`), threadID, messageID);
-            } catch (error) {
-                console.error("Error leaving group:", error);
-                return api.sendMessage(deco.error(`❌ فشل مغادرة المجموعة: ${leaveThreadID}. قد يكون البوت ليس عضواً فيها أو حدث خطأ آخر.`), threadID, messageID);
-            }
-
-        case "اسم_مجموعة":
-        case "setname":
-            if (args.length < 3) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة اسم_مجموعة [threadID] [الاسم الجديد]"), threadID, messageID);
-            }
-            const setNameThreadID = args[1];
-            const newThreadName = args.slice(2).join(" ");
-            try {
-                await api.setTitle(newThreadName, setNameThreadID);
-                return api.sendMessage(deco.success(`✅ تم تغيير اسم المجموعة ${setNameThreadID} إلى: ${newThreadName}`), threadID, messageID);
-            } catch (error) {
-                console.error("Error changing group name:", error);
-                return api.sendMessage(deco.error(`❌ فشل تغيير اسم المجموعة ${setNameThreadID}.`), threadID, messageID);
-            }
-
-        case "صورة_مجموعة":
-        case "setimage":
-            if (args.length < 3) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة صورة_مجموعة [threadID] [رابط الصورة]"), threadID, messageID);
-            }
-            const setImageThreadID = args[1];
-            const imageUrl = args[2];
-            try {
-                const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-                const imagePath = path.join(__dirname, 'cache', `${setImageThreadID}_group_image.jpg`);
-                await fs.outputFile(imagePath, imageResponse.data);
-
-                await api.changeGroupImage(fs.createReadStream(imagePath), setImageThreadID);
-                fs.unlinkSync(imagePath);
-                return api.sendMessage(deco.success(`✅ تم تغيير صورة المجموعة ${setImageThreadID} بنجاح.`), threadID, messageID);
-            } catch (error) {
-                console.error("Error changing group image:", error);
-                return api.sendMessage(deco.error(`❌ فشل تغيير صورة المجموعة ${setImageThreadID}. تأكد من صحة الرابط.`), threadID, messageID);
-            }
-
-
-        case "اذاعة":
-        case "broadcast":
-            if (args.length < 2) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة اذاعة [رسالة]"), threadID, messageID);
-            }
-            const broadcastMessage = args.slice(1).join(" ");
-            try {
-                const threadList = await api.getThreadList(200, null, ["INBOX"]);
-                let sentCount = 0;
-                for (const thread of threadList) {
-                    if (thread.isGroup && thread.threadID !== threadID) {
-                        await api.sendMessage(broadcastMessage, thread.threadID);
-                        sentCount++;
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
-                }
-                return api.sendMessage(deco.success(`✅ تم إرسال الإذاعة إلى ${sentCount} مجموعة بنجاح.`), threadID, messageID);
-            } catch (error) {
-                console.error("Error broadcasting message:", error);
-                return api.sendMessage(deco.error("❌ حدث خطأ أثناء إرسال الإذاعة."), threadID, messageID);
-            }
-
-        case "اذاعة_صورة":
-        case "broadcast_image":
-            if (args.length < 3) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة اذاعة_صورة [رابط الصورة] [رسالة]"), threadID, messageID);
-            }
-            const broadcastImageUrl = args[1];
-            const broadcastImageMessage = args.slice(2).join(" ");
-            try {
-                const imageResponse = await axios.get(broadcastImageUrl, { responseType: 'arraybuffer' });
-                const imagePath = path.join(__dirname, 'cache', `broadcast_image.jpg`);
-                await fs.outputFile(imagePath, imageResponse.data);
-
-                const threadList = await api.getThreadList(200, null, ["INBOX"]);
-                let sentCount = 0;
-                for (const thread of threadList) {
-                    if (thread.isGroup && thread.threadID !== threadID) {
-                        await api.sendMessage(
-                            {
-                                body: broadcastImageMessage,
-                                attachment: fs.createReadStream(imagePath)
-                            },
-                            thread.threadID
-                        );
-                        sentCount++;
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
-                }
-                fs.unlinkSync(imagePath);
-                return api.sendMessage(deco.success(`✅ تم إرسال الإذاعة بالصورة إلى ${sentCount} مجموعة بنجاح.`), threadID, messageID);
-            } catch (error) {
-                console.error("Error broadcasting image:", error);
-                return api.sendMessage(deco.error("❌ حدث خطأ أثناء إرسال الإذاعة بالصورة. تأكد من صحة الرابط."), threadID, messageID);
-            }
-
-
-        case "صورة_بوت":
-        case "setavatar":
-            if (args.length < 2) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة صورة_بوت [رابط الصورة]"), threadID, messageID);
-            }
-            const botAvatarUrl = args[1];
-            try {
-                const imageResponse = await axios.get(botAvatarUrl, { responseType: 'arraybuffer' });
-                const imagePath = path.join(__dirname, 'cache', `bot_avatar.jpg`);
-                await fs.outputFile(imagePath, imageResponse.data);
-
-                await api.changeAvatar(fs.createReadStream(imagePath));
-                fs.unlinkSync(imagePath);
-                return api.sendMessage(deco.success("✅ تم تغيير صورة البوت الشخصية بنجاح."), threadID, messageID);
-            } catch (error) {
-                console.error("Error changing bot avatar:", error);
-                return api.sendMessage(deco.error("❌ فشل تغيير صورة البوت الشخصية. تأكد من صحة الرابط."), threadID, messageID);
-            }
-
-        case "بايو_بوت":
-        case "setbio":
-            if (args.length < 2) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة بايو_بوت [البايو الجديد]"), threadID, messageID);
-            }
-            const newBotBio = args.slice(1).join(" ");
-            try {
-                await api.changeBio(newBotBio);
-                return api.sendMessage(deco.success("✅ تم تغيير بايو البوت بنجاح."), threadID, messageID);
-            } catch (error) {
-                console.error("Error changing bot bio:", error);
-                return api.sendMessage(deco.error("❌ فشل تغيير بايو البوت."), threadID, messageID);
-            }
-
-
-        case "طلبات_صداقة":
-        case "friend_requests":
-            try {
-                const friendRequests = await api.getFriendRequests();
-                if (friendRequests.length === 0) {
-                    return api.sendMessage(deco.info("لا توجد طلبات صداقة معلقة."), threadID, messageID);
-                }
-                let msg = deco.title("👥 طلبات الصداقة المعلقة") + "\n\n";
-                for (const req of friendRequests) {
-                    const userInfo = await api.getUserInfo(req.userID);
-                    const userName = userInfo[req.userID]?.name || "غير معروف";
-                    msg += deco.line(`- ${userName} (ID: ${req.userID})`) + "\n";
-                }
-                msg += deco.line("\nاستخدم: ادارة قبول_صداقة [userID] أو ادارة رفض_صداقة [userID]");
-                return api.sendMessage(msg, threadID, messageID);
-            } catch (error) {
-                console.error("Error getting friend requests:", error);
-                return api.sendMessage(deco.error("❌ حدث خطأ أثناء جلب طلبات الصداقة."), threadID, messageID);
-            }
-
-        case "قبول_صداقة":
-        case "accept_friend":
-            if (args.length < 2) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة قبول_صداقة [userID]"), threadID, messageID);
-            }
-            const acceptFriendID = args[1];
-            try {
-                await api.handleFriendRequest(acceptFriendID, true);
-                return api.sendMessage(deco.success(`✅ تم قبول طلب الصداقة من ${acceptFriendID} بنجاح.`), threadID, messageID);
-            } catch (error) {
-                console.error("Error accepting friend request:", error);
-                return api.sendMessage(deco.error(`❌ فشل قبول طلب الصداقة من ${acceptFriendID}.`), threadID, messageID);
-            }
-
-        case "رفض_صداقة":
-        case "decline_friend":
-            if (args.length < 2) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة رفض_صداقة [userID]"), threadID, messageID);
-            }
-            const declineFriendID = args[1];
-            try {
-                await api.handleFriendRequest(declineFriendID, false);
-                return api.sendMessage(deco.success(`✅ تم رفض طلب الصداقة من ${declineFriendID} بنجاح.`), threadID, messageID);
-            } catch (error) {
-                console.error("Error declining friend request:", error);
-                return api.sendMessage(deco.error(`❌ فشل رفض طلب الصداقة من ${declineFriendID}.`), threadID, messageID);
-            }
-
-        case "طلبات_مجموعات":
-        case "group_invites":
-            try {
-                const groupRequests = await api.getGroupRequests();
-                if (groupRequests.length === 0) {
-                    return api.sendMessage(deco.info("لا توجد دعوات مجموعات معلقة."), threadID, messageID);
-                }
-                let msg = deco.title("✉️ دعوات المجموعات المعلقة") + "\n\n";
-                for (const req of groupRequests) {
-                    const threadInfo = await api.getThreadInfo(req.threadID);
-                    const threadName = threadInfo.threadName || "غير معروف";
-                    msg += deco.line(`- ${threadName} (ID: ${req.threadID})`) + "\n";
-                }
-                msg += deco.line("\nاستخدم: ادارة قبول_مجموعة [threadID] أو ادارة رفض_مجموعة [threadID]");
-                return api.sendMessage(msg, threadID, messageID);
-            } catch (error) {
-                console.error("Error getting group requests:", error);
-                return api.sendMessage(deco.error("❌ حدث خطأ أثناء جلب دعوات المجموعات."), threadID, messageID);
-            }
-
-        case "قبول_مجموعة":
-        case "accept_group":
-            if (args.length < 2) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة قبول_مجموعة [threadID]"), threadID, messageID);
-            }
-            const acceptGroupID = args[1];
-            try {
-                await api.handleGroupRequest(acceptGroupID, true);
-                return api.sendMessage(deco.success(`✅ تم قبول دعوة المجموعة ${acceptGroupID} بنجاح.`), threadID, messageID);
-            } catch (error) {
-                console.error("Error accepting group invite:", error);
-                return api.sendMessage(deco.error(`❌ فشل قبول دعوة المجموعة ${acceptGroupID}.`), threadID, messageID);
-            }
-
-        case "رفض_مجموعة":
-        case "decline_group":
-            if (args.length < 2) {
-                return api.sendMessage(deco.error("الاستخدام: ادارة رفض_مجموعة [threadID]"), threadID, messageID);
-            }
-            const declineGroupID = args[1];
-            try {
-                await api.handleGroupRequest(declineGroupID, false);
-                return api.sendMessage(deco.success(`✅ تم رفض دعوة المجموعة ${declineGroupID} بنجاح.`), threadID, messageID);
-            } catch (error) {
-                console.error("Error declining group invite:", error);
-                return api.sendMessage(deco.error(`❌ فشل رفض دعوة المجموعة ${declineGroupID}.`), threadID, messageID);
-            }
-
-        default:
-            let helpMsg = deco.title("🛠️ أوامر الإدارة المتاحة") + "\n\n";
-            helpMsg += deco.line("• ادارة تشغيل/ايقاف - تشغيل أو إيقاف البوت.") + "\n";
-            helpMsg += deco.line("• ادارة إحصائيات - عرض إحصائيات البوت.") + "\n";
-            helpMsg += deco.line("• ادارة حظر [userID] - حظر مستخدم.") + "\n";
-            helpMsg += deco.line("• ادارة إلغاء_حظر [userID] - إلغاء حظر مستخدم.") + "\n";
-            helpMsg += deco.line("• ادارة حظر_جروب [threadID] - حظر مجموعة.") + "\n";
-            helpMsg += deco.line("• ادارة إلغاء_حظر_جروب [threadID] - إلغاء حظر مجموعة.") + "\n";
-            helpMsg += deco.line("• ادارة مجموعات - عرض قائمة المجموعات التي يتواجد بها البوت.") + "\n";
-            helpMsg += deco.line("• ادارة مغادرة [threadID] - مغادرة مجموعة محددة.") + "\n";
-            helpMsg += deco.line("• ادارة اسم_مجموعة [threadID] [الاسم الجديد] - تغيير اسم مجموعة.") + "\n";
-            helpMsg += deco.line("• ادارة صورة_مجموعة [threadID] [رابط الصورة] - تغيير صورة مجموعة.") + "\n";
-            helpMsg += deco.line("• ادارة اذاعة [رسالة] - إرسال رسالة لجميع المجموعات.") + "\n";
-            helpMsg += deco.line("• ادارة اذاعة_صورة [رابط الصورة] [رسالة] - إرسال رسالة وصورة لجميع المجموعات.") + "\n";
-            helpMsg += deco.line("• ادارة صورة_بوت [رابط الصورة] - تغيير صورة البوت الشخصية.") + "\n";
-            helpMsg += deco.line("• ادارة بايو_بوت [البايو الجديد] - تغيير بايو البوت.") + "\n";
-            helpMsg += deco.line("• ادارة طلبات_صداقة - عرض طلبات الصداقة المعلقة.") + "\n";
-            helpMsg += deco.line("• ادارة قبول_صداقة [userID] - قبول طلب صداقة.") + "\n";
-            helpMsg += deco.line("• ادارة رفض_صداقة [userID] - رفض طلب صداقة.") + "\n";
-            helpMsg += deco.line("• ادارة طلبات_مجموعات - عرض دعوات المجموعات المعلقة.") + "\n";
-            helpMsg += deco.line("• ادارة قبول_مجموعة [threadID] - قبول دعوة مجموعة.") + "\n";
-            helpMsg += deco.line("• ادارة رفض_مجموعة [threadID] - رفض دعوة مجموعة.") + "\n";
-            return api.sendMessage(helpMsg, threadID, messageID);
+            
+            msg += `رد على هذه الرسالة مع أحد الأوامر:\n`;
+            msg += `• حظر [الرقم] - حظر المجموعة\n`;
+            msg += `• الغاء_حظر [الرقم] - الغاء حظر المجموعة\n`;
+            msg += `• غادر [الرقم] - مغادرة المجموعة\n`;
+            msg += `• ضيفني [الرقم] - إضافتك إلى المجموعة`;
+            
+            api.sendMessage(msg, threadID, (err, info) => {
+                if (err) return;
+                Mirror.client.HakimReply.push({
+                    name: module.exports.config.title,
+                    messageID: info.messageID,
+                    author: senderID,
+                    type: "group_list",
+                    groupsData: groupsData
+                });
+            }, messageID);
+            return;
+        } catch (error) {
+            console.error(error);
+            return api.sendMessage(`خطأ: ${error.message}`, threadID, messageID);
+        }
     }
+
+    // ============= حظر مستخدم =============
+    if (action === "حظر" || action === "ban") {
+        const targetID = args[1];
+        const reason = args.slice(2).join(" ") || "لا يوجد سبب";
+        
+        if (!targetID) {
+            return api.sendMessage("الاستخدام: ادارة حظر [معرف المستخدم] [السبب]", threadID, messageID);
+        }
+        
+        if (config.ADMINBOT.includes(targetID)) {
+            return api.sendMessage("لا يمكن حظر مطور آخر!", threadID, messageID);
+        }
+        
+        const isBanned = userData.isGloballyBanned(targetID);
+        if (isBanned) {
+            return api.sendMessage(`المستخدم ${targetID} محظور بالفعل`, threadID, messageID);
+        }
+        
+        userData.globalBan(targetID, senderID, reason);
+        return api.sendMessage(`تم حظر المستخدم ${targetID}\nالسبب: ${reason}`, threadID, messageID);
+    }
+
+    // ============= الغاء حظر مستخدم =============
+    if (action === "الغاء_حظر" || action === "unban") {
+        const targetID = args[1];
+        
+        if (!targetID) {
+            return api.sendMessage("الاستخدام: ادارة الغاء_حظر [معرف المستخدم]", threadID, messageID);
+        }
+        
+        const isBanned = userData.isGloballyBanned(targetID);
+        if (!isBanned) {
+            return api.sendMessage(`المستخدم ${targetID} غير محظور`, threadID, messageID);
+        }
+        
+        userData.globalUnban(targetID);
+        return api.sendMessage(`تم الغاء حظر المستخدم ${targetID}`, threadID, messageID);
+    }
+
+    // ============= حظر مجموعة =============
+    if (action === "حظر_جروب" || action === "ban_group") {
+        const targetGroupID = args[1] || threadID;
+        const reason = args.slice(2).join(" ") || "لا يوجد سبب";
+        
+        const isBanned = userData.isGroupBanned(targetGroupID);
+        if (isBanned) {
+            return api.sendMessage(`المجموعة ${targetGroupID} محظورة بالفعل`, threadID, messageID);
+        }
+        
+        userData.banGroup(targetGroupID, senderID, reason);
+        return api.sendMessage(`تم حظر المجموعة ${targetGroupID}\nالسبب: ${reason}`, threadID, messageID);
+    }
+
+    // ============= الغاء حظر مجموعة =============
+    if (action === "الغاء_حظر_جروب" || action === "unban_group") {
+        const targetGroupID = args[1] || threadID;
+        
+        const isBanned = userData.isGroupBanned(targetGroupID);
+        if (!isBanned) {
+            return api.sendMessage(`المجموعة ${targetGroupID} غير محظورة`, threadID, messageID);
+        }
+        
+        userData.unbanGroup(targetGroupID);
+        return api.sendMessage(`تم الغاء حظر المجموعة ${targetGroupID}`, threadID, messageID);
+    }
+
+    // ============= مغادرة مجموعة =============
+    if (action === "غادر" || action === "leave") {
+        const targetGroupID = args[1] || threadID;
+        
+        try {
+            await api.removeUserFromGroup(api.getCurrentUserID(), targetGroupID);
+            return api.sendMessage(`تم مغادرة المجموعة ${targetGroupID}`, threadID, messageID);
+        } catch (error) {
+            return api.sendMessage(`فشل مغادرة المجموعة: ${error.message}`, threadID, messageID);
+        }
+    }
+
+    // ============= إيقاف البوت =============
+    if (action === "ايقاف" || action === "stop") {
+        global.isBotActive = false;
+        return api.sendMessage("تم إيقاف البوت مؤقتاً", threadID, messageID);
+    }
+
+    // ============= تشغيل البوت =============
+    if (action === "تشغيل" || action === "start") {
+        global.isBotActive = true;
+        return api.sendMessage("تم تشغيل البوت", threadID, messageID);
+    }
+
+    // ============= إحصائيات =============
+    if (action === "احصائيات" || action === "stats") {
+        const uptime = Date.now() - Mirror.client.startTime;
+        const uptimeHours = Math.floor(uptime / 3600000);
+        const uptimeMinutes = Math.floor((uptime % 3600000) / 60000);
+        
+        const globalBans = userData.getGlobalBannedList();
+        const bannedGroups = userData.getBannedGroupsList();
+        
+        let msg = "احصائيات البوت\n━━━━━━━━━━━━━\n";
+        msg += `الاوامر: ${Mirror.client.commands.size}\n`;
+        msg += `الاحداث: ${Mirror.client.events.size}\n`;
+        msg += `وقت التشغيل: ${uptimeHours}س ${uptimeMinutes}د\n`;
+        msg += `محظورين عالمياً: ${globalBans.length}\n`;
+        msg += `مجموعات محظورة: ${bannedGroups.length}\n`;
+        msg += `حالة البوت: ${global.isBotActive ? "نشط" : "متوقف"}`;
+        
+        return api.sendMessage(msg, threadID, messageID);
+    }
+
+    // ============= إذاعة =============
+    if (action === "اذاعة" || action === "broadcast") {
+        if (args.length < 2) {
+            return api.sendMessage("الاستخدام: ادارة اذاعة [الرسالة]", threadID, messageID);
+        }
+        
+        const broadcastMessage = args.slice(1).join(" ");
+        
+        try {
+            const allThreads = await api.getThreadList(200, null, ["INBOX"]);
+            const groupThreads = allThreads.filter(t => t.isGroup && t.isSubscribed);
+            
+            let sentCount = 0;
+            for (const group of groupThreads) {
+                if (group.threadID !== threadID) {
+                    try {
+                        await api.sendMessage(broadcastMessage, group.threadID);
+                        sentCount++;
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    } catch (e) {}
+                }
+            }
+            return api.sendMessage(`تم ارسال الاذاعة الى ${sentCount} مجموعة`, threadID, messageID);
+        } catch (error) {
+            return api.sendMessage(`خطأ: ${error.message}`, threadID, messageID);
+        }
+    }
+
+    // ============= إذاعة صورة =============
+    if (action === "اذاعة_صورة" || action === "broadcast_image") {
+        if (args.length < 3) {
+            return api.sendMessage("الاستخدام: ادارة اذاعة_صورة [رابط الصورة] [الرسالة]", threadID, messageID);
+        }
+        
+        const imageUrl = args[1];
+        const caption = args.slice(2).join(" ");
+        
+        try {
+            const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+            const cachePath = path.join(__dirname, 'cache');
+            await fs.ensureDir(cachePath);
+            const imagePath = path.join(cachePath, `broadcast_${Date.now()}.jpg`);
+            await fs.writeFile(imagePath, imageResponse.data);
+            
+            const allThreads = await api.getThreadList(200, null, ["INBOX"]);
+            const groupThreads = allThreads.filter(t => t.isGroup && t.isSubscribed);
+            
+            let sentCount = 0;
+            for (const group of groupThreads) {
+                if (group.threadID !== threadID) {
+                    try {
+                        await api.sendMessage({
+                            body: caption,
+                            attachment: fs.createReadStream(imagePath)
+                        }, group.threadID);
+                        sentCount++;
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    } catch (e) {}
+                }
+            }
+            
+            await fs.unlink(imagePath);
+            return api.sendMessage(`تم ارسال الاذاعة بالصورة الى ${sentCount} مجموعة`, threadID, messageID);
+        } catch (error) {
+            return api.sendMessage(`خطأ: ${error.message}`, threadID, messageID);
+        }
+    }
+
+    // ============= تغيير صورة البوت =============
+    if (action === "صورة_بوت" || action === "setavatar") {
+        return api.sendMessage("قم بالرد على هذه الرسالة بالصورة التي تريد تعيينها كصورة بروفايل", threadID, (err, info) => {
+            if (err) return;
+            Mirror.client.HakimReply.push({
+                name: module.exports.config.title,
+                messageID: info.messageID,
+                author: senderID,
+                type: "set_avatar"
+            });
+        }, messageID);
+    }
+
+    // ============= تغيير بايو البوت =============
+    if (action === "بايو_بوت" || action === "setbio") {
+        return api.sendMessage("قم بالرد على هذه الرسالة بالنص الذي تريد تعيينه كسيرة ذاتية", threadID, (err, info) => {
+            if (err) return;
+            Mirror.client.HakimReply.push({
+                name: module.exports.config.title,
+                messageID: info.messageID,
+                author: senderID,
+                type: "set_bio"
+            });
+        }, messageID);
+    }
+
+    // ============= طلبات المجموعات =============
+    if (action === "طلبات" || action === "pending" || action === "requests") {
+        try {
+            const pendingThreads = await api.getThreadList(100, null, ['PENDING']);
+            const groups = pendingThreads.filter(group => group.isGroup);
+
+            if (groups.length === 0) {
+                return api.sendMessage("لا توجد طلبات مجموعات معلقة حالياً", threadID, messageID);
+            }
+
+            let msg = "قائمة طلبات المجموعات المعلقة\n━━━━━━━━━━━━━\n\n";
+            const pendingData = [];
+
+            groups.forEach((group, index) => {
+                msg += `${index + 1}. ${group.name || "مجموعة بدون اسم"}\n`;
+                msg += `   ايدي: ${group.threadID}\n`;
+                msg += `   الاعضاء: ${group.participantIDs.length}\n\n`;
+                pendingData.push({
+                    id: group.threadID,
+                    name: group.name || "مجموعة بدون اسم",
+                    index: index + 1
+                });
+            });
+
+            msg += "رد على هذه الرسالة مع:\n";
+            msg += "• موافقة [الرقم] - الموافقة على الطلب\n";
+            msg += "• رفض [الرقم] - رفض الطلب\n";
+            msg += "• موافقة الكل - الموافقة على جميع الطلبات";
+
+            api.sendMessage(msg, threadID, (err, info) => {
+                if (err) return;
+                Mirror.client.HakimReply.push({
+                    name: module.exports.config.title,
+                    messageID: info.messageID,
+                    author: senderID,
+                    type: "pending_groups",
+                    pendingData: pendingData
+                });
+            }, messageID);
+            return;
+        } catch (error) {
+            return api.sendMessage(`خطأ: ${error.message}`, threadID, messageID);
+        }
+    }
+
+    // ============= مساعدة =============
+    let helpMsg = "أوامر الإدارة المتاحة\n━━━━━━━━━━━━━\n\n";
+    helpMsg += "• ادارة لاست - عرض المجموعات والتحكم بها\n";
+    helpMsg += "• ادارة حظر [ايدي] [سبب] - حظر مستخدم عالمياً\n";
+    helpMsg += "• ادارة الغاء_حظر [ايدي] - الغاء حظر مستخدم\n";
+    helpMsg += "• ادارة حظر_جروب [ايدي] - حظر مجموعة\n";
+    helpMsg += "• ادارة الغاء_حظر_جروب [ايدي] - الغاء حظر مجموعة\n";
+    helpMsg += "• ادارة غادر [ايدي] - مغادرة مجموعة\n";
+    helpMsg += "• ادارة طلبات - عرض طلبات المجموعات\n";
+    helpMsg += "• ادارة اذاعة [رسالة] - ارسال لجميع المجموعات\n";
+    helpMsg += "• ادارة اذاعة_صورة [رابط] [رسالة] - ارسال صورة للجميع\n";
+    helpMsg += "• ادارة صورة_بوت - تغيير صورة البوت\n";
+    helpMsg += "• ادارة بايو_بوت - تغيير بايو البوت\n";
+    helpMsg += "• ادارة تشغيل/ايقاف - تشغيل/ايقاف البوت\n";
+    helpMsg += "• ادارة احصائيات - عرض احصائيات البوت";
+    
+    return api.sendMessage(helpMsg, threadID, messageID);
 };
 
-
-module.exports.HakimEvent = async ({ api, event, userData }) => {
-    const { senderID, threadID } = event;
-
-    if (global.bannedUsers.has(senderID)) {
-
+// ============= معالج الردود (HakimReply) =============
+module.exports.HakimReply = async ({ api, event, HakimReply, userData }) => {
+    const { type, author, groupsData, pendingData } = HakimReply;
+    const { threadID, messageID, senderID, body, attachments } = event;
+    
+    if (senderID !== author) return;
+    
+    // ===== معالجة ردود قائمة المجموعات =====
+    if (type === "group_list" && groupsData) {
+        const replyBody = body?.trim().toLowerCase();
+        const match = replyBody?.match(/(حظر|الغاء_حظر|غادر|ضيفني)\s*(\d+)/);
+        
+        if (!match) {
+            return api.sendMessage("صيغة غير صحيحة. استخدم: حظر 1", threadID, messageID);
+        }
+        
+        const cmd = match[1];
+        const index = parseInt(match[2]);
+        const group = groupsData.find(g => g.index === index);
+        
+        if (!group) {
+            return api.sendMessage("رقم المجموعة غير صحيح", threadID, messageID);
+        }
+        
+        if (cmd === "حظر") {
+            if (userData.isGroupBanned(group.id)) {
+                return api.sendMessage(`المجموعة "${group.name}" محظورة بالفعل`, threadID, messageID);
+            }
+            userData.banGroup(group.id, senderID, "تم الحظر عن طريق أمر لاست");
+            api.sendMessage(`تم حظر المجموعة "${group.name}"`, threadID, messageID);
+            
+        } else if (cmd === "الغاء_حظر") {
+            if (!userData.isGroupBanned(group.id)) {
+                return api.sendMessage(`المجموعة "${group.name}" غير محظورة`, threadID, messageID);
+            }
+            userData.unbanGroup(group.id);
+            api.sendMessage(`تم الغاء حظر المجموعة "${group.name}"`, threadID, messageID);
+            
+        } else if (cmd === "غادر") {
+            try {
+                await api.removeUserFromGroup(api.getCurrentUserID(), group.id);
+                api.sendMessage(`تم مغادرة المجموعة "${group.name}"`, threadID, messageID);
+            } catch (err) {
+                api.sendMessage(`فشل المغادرة: ${err.message}`, threadID, messageID);
+            }
+            
+        } else if (cmd === "ضيفني") {
+            try {
+                await api.addUserToGroup(senderID, group.id);
+                api.sendMessage(`تمت إضافتك إلى "${group.name}"`, threadID, messageID);
+            } catch (err) {
+                api.sendMessage(`فشل الإضافة: ${err.message}`, threadID, messageID);
+            }
+        }
+        
+        try { await api.unsendMessage(HakimReply.messageID); } catch(e) {}
         return;
     }
-
-    if (global.bannedGroups.has(threadID)) {
-
+    
+    // ===== معالجة ردود طلبات المجموعات =====
+    if (type === "pending_groups" && pendingData) {
+        const replyBody = body?.trim().toLowerCase();
+        
+        if (replyBody === "موافقة الكل") {
+            let successCount = 0;
+            for (const group of pendingData) {
+                try {
+                    await api.handleGroupRequest(group.id, true);
+                    successCount++;
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch(e) {}
+            }
+            api.sendMessage(`تمت الموافقة على ${successCount} من أصل ${pendingData.length} طلب`, threadID, messageID);
+            
+        } else {
+            const match = replyBody?.match(/(موافقة|رفض)\s*(\d+)/);
+            if (!match) {
+                return api.sendMessage("صيغة غير صحيحة. استخدم: موافقة 1 أو رفض 1", threadID, messageID);
+            }
+            
+            const cmd = match[1];
+            const index = parseInt(match[2]);
+            const group = pendingData.find(g => g.index === index);
+            
+            if (!group) {
+                return api.sendMessage("رقم الطلب غير صحيح", threadID, messageID);
+            }
+            
+            const accept = cmd === "موافقة";
+            try {
+                await api.handleGroupRequest(group.id, accept);
+                api.sendMessage(`${accept ? "تم قبول" : "تم رفض"} طلب المجموعة "${group.name}"`, threadID, messageID);
+            } catch (err) {
+                api.sendMessage(`فشل: ${err.message}`, threadID, messageID);
+            }
+        }
+        
+        try { await api.unsendMessage(HakimReply.messageID); } catch(e) {}
+        return;
+    }
+    
+    // ===== تغيير صورة البوت =====
+    if (type === "set_avatar") {
+        if (!attachments || attachments.length === 0 || attachments[0].type !== "photo") {
+            return api.sendMessage("يرجى الرد بالصورة", threadID, messageID);
+        }
+        
+        const imageUrl = attachments[0].url;
+        const cachePath = path.join(__dirname, 'cache');
+        await fs.ensureDir(cachePath);
+        const imagePath = path.join(cachePath, `avatar_${Date.now()}.jpg`);
+        
+        try {
+            const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+            await fs.writeFile(imagePath, response.data);
+            await api.changeAvatar(fs.createReadStream(imagePath));
+            await fs.unlink(imagePath);
+            api.sendMessage("تم تغيير صورة البوت", threadID, messageID);
+        } catch (err) {
+            api.sendMessage(`فشل: ${err.message}`, threadID, messageID);
+        }
+        
+        try { await api.unsendMessage(HakimReply.messageID); } catch(e) {}
+        return;
+    }
+    
+    // ===== تغيير بايو البوت =====
+    if (type === "set_bio") {
+        if (!body || body.length < 3) {
+            return api.sendMessage("النص قصير جداً", threadID, messageID);
+        }
+        
+        try {
+            await api.changeBio(body);
+            api.sendMessage(`تم تغيير البايو إلى:\n${body}`, threadID, messageID);
+        } catch (err) {
+            api.sendMessage(`فشل: ${err.message}`, threadID, messageID);
+        }
+        
+        try { await api.unsendMessage(HakimReply.messageID); } catch(e) {}
         return;
     }
 };

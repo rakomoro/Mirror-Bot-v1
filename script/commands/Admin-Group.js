@@ -5,17 +5,154 @@ module.exports.config = {
     release: "1.0.0",
     clearance: 1,
     author: "Hakim Tracks",
-    summary: "إدارة المجموعة (صورة، اسم، ايموجي، طرد، اضافة، ترقية، تنزيل، قفل، فتح، معلومات، كنية، كنية-الكل)",
+    summary: "إدارة المجموعة (صورة، اسم، ايموجي، طرد، اضافة، ترقية، تنزيل، قفل، فتح، معلومات، كنية، كنية-الكل، حظر، الغاء_حظر، محظورين)",
     section: "الادمــــن",
-    syntax: "مجموعة [صورة|اسم|ايموجي|طرد|اضافة|ارفع|ازالة|عرض|كنية|كنية-الكل]",
+    syntax: "مجموعة [صورة|اسم|ايموجي|طرد|اضافة|ارفع|ازالة|عرض|كنية|كنية-الكل|حظر|الغاء_حظر|محظورين]",
     delay: 5,
 };
 
-module.exports.HakimRun = async function({ api, event, args }) {
+module.exports.HakimRun = async function({ api, event, args, userData }) {
     const { threadID, messageID, senderID, mentions, messageReply } = event;
     const subCommand = args[0]?.toLowerCase();
 
+    // ============= حظر مستخدم في المجموعة =============
+    if (subCommand === "حظر" || subCommand === "ban") {
+        let targetID = null;
+        let targetName = "العضو";
+        let reason = args.slice(1).join(" ");
+        
+        // تحديد المستخدم المستهدف
+        if (Object.keys(mentions).length > 0) {
+            targetID = Object.keys(mentions)[0];
+            targetName = mentions[targetID];
+            reason = reason.replace(new RegExp(`@${mentions[targetID]}`, 'g'), "").trim();
+        } else if (messageReply?.senderID) {
+            targetID = messageReply.senderID;
+            try {
+                const userInfo = await api.getUserInfo(targetID);
+                targetName = userInfo[targetID].name;
+            } catch(e) {}
+        } else if (args[1] && !isNaN(args[1])) {
+            targetID = args[1];
+            reason = args.slice(2).join(" ");
+            try {
+                const userInfo = await api.getUserInfo(targetID);
+                targetName = userInfo[targetID].name;
+            } catch(e) {}
+        }
+        
+        if (!targetID) {
+            return api.sendMessage("⚠️ منشن العضو أو رد على رسالته أو اكتب معرفه لحظره", threadID, messageID);
+        }
+        
+        // منع حظر البوت نفسه
+        if (targetID === api.getCurrentUserID()) {
+            return api.sendMessage("لا يمكنك حظر البوت 😢", threadID, messageID);
+        }
+        
+        // منع حظر الأدمن (اختياري)
+        try {
+            const threadInfo = await api.getThreadInfo(threadID);
+            const isTargetAdmin = threadInfo.adminIDs.some(admin => admin.id === targetID);
+            if (isTargetAdmin && senderID !== targetID) {
+                return api.sendMessage("⚠️ لا يمكن حظر أدمن المجموعة", threadID, messageID);
+            }
+        } catch(e) {}
+        
+        // التحقق من الحظر الموجود
+        const existingBan = userData.isLocallyBanned(targetID, threadID);
+        if (existingBan) {
+            return api.sendMessage(`⚠️ ${targetName} محظور بالفعل في هذه المجموعة`, threadID, messageID);
+        }
+        
+        // تنفيذ الحظر
+        const banReason = reason || "لا يوجد سبب";
+        userData.localBan(targetID, threadID, senderID, banReason);
+        
+        // محاولة طرد المستخدم من المجموعة (اختياري)
+        try {
+            await api.removeUserFromGroup(targetID, threadID);
+            api.sendMessage(`🚫 ${targetName} تم حظره وطرده من المجموعة\n📝 السبب: ${banReason}`, threadID, messageID);
+        } catch(e) {
+            api.sendMessage(`🚫 ${targetName} تم حظره في هذه المجموعة\n📝 السبب: ${banReason}\n⚠️ لم يتم طرده بسبب صلاحيات البوت`, threadID, messageID);
+        }
+        
+        return;
+    }
     
+    // ============= الغاء حظر مستخدم في المجموعة =============
+    if (subCommand === "الغاء_حظر" || subCommand === "unban") {
+        let targetID = null;
+        let targetName = "العضو";
+        
+        if (Object.keys(mentions).length > 0) {
+            targetID = Object.keys(mentions)[0];
+            targetName = mentions[targetID];
+        } else if (messageReply?.senderID) {
+            targetID = messageReply.senderID;
+            try {
+                const userInfo = await api.getUserInfo(targetID);
+                targetName = userInfo[targetID].name;
+            } catch(e) {}
+        } else if (args[1] && !isNaN(args[1])) {
+            targetID = args[1];
+            try {
+                const userInfo = await api.getUserInfo(targetID);
+                targetName = userInfo[targetID].name;
+            } catch(e) {}
+        }
+        
+        if (!targetID) {
+            return api.sendMessage("⚠️ منشن العضو أو اكتب معرفه لإلغاء حظره", threadID, messageID);
+        }
+        
+        const existingBan = userData.isLocallyBanned(targetID, threadID);
+        if (!existingBan) {
+            return api.sendMessage(`⚠️ ${targetName} غير محظور في هذه المجموعة`, threadID, messageID);
+        }
+        
+        userData.localUnban(targetID, threadID);
+        api.sendMessage(`✅ تم إلغاء حظر ${targetName} في هذه المجموعة`, threadID, messageID);
+        
+        // محاولة إعادة المستخدم (اختياري)
+        try {
+            await api.addUserToGroup(targetID, threadID);
+            api.sendMessage(`👋 تمت إعادة ${targetName} إلى المجموعة`, threadID);
+        } catch(e) {}
+        
+        return;
+    }
+    
+    // ============= عرض قائمة المحظورين في المجموعة =============
+    if (subCommand === "محظورين" || subCommand === "banned") {
+        const bannedList = userData.getLocalBannedList(threadID);
+        
+        if (bannedList.length === 0) {
+            return api.sendMessage("📋 لا يوجد أعضاء محظورون في هذه المجموعة", threadID, messageID);
+        }
+        
+        let msg = `🚫 قائمة المحظورين في هذه المجموعة\n━━━━━━━━━━━━━\n\n`;
+        
+        for (let i = 0; i < bannedList.length; i++) {
+            const ban = bannedList[i];
+            let userName = "غير معروف";
+            try {
+                const userInfo = await api.getUserInfo(ban.user_id);
+                userName = userInfo[ban.user_id]?.name || ban.user_id;
+            } catch(e) {}
+            
+            msg += `${i + 1}. ${userName}\n`;
+            msg += `   ايدي: ${ban.user_id}\n`;
+            msg += `   السبب: ${ban.reason}\n`;
+            msg += `   تاريخ: ${new Date(ban.banned_at).toLocaleString()}\n\n`;
+        }
+        
+        msg += `لإلغاء حظر: مجموعة الغاء_حظر [ايدي المستخدم]`;
+        api.sendMessage(msg, threadID, messageID);
+        return;
+    }
+
+    // ============= صورة المجموعة =============
     if (subCommand === "صورة" || subCommand === "avatar" || subCommand === "image") {
         let imageUrl = null;
         
@@ -43,7 +180,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
         }
     }
     
-   
+    // ============= اسم المجموعة =============
     else if (subCommand === "اسم" || subCommand === "name") {
         const newName = args.slice(1).join(" ");
         if (!newName) return api.sendMessage("⚠️ اكتب الاسم الجديد بعد الأمر", threadID, messageID);
@@ -56,7 +193,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
         }
     }
     
-   
+    // ============= إيموجي المجموعة =============
     else if (subCommand === "ايموجي" || subCommand === "emoji") {
         const newEmoji = args[1];
         if (!newEmoji) return api.sendMessage("⚠️ اكتب الإيموجي بعد الأمر\nمثال: مجموعة ايموجي 🤖", threadID, messageID);
@@ -69,7 +206,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
         }
     }
     
-    
+    // ============= طرد (مع التحقق من الحظر) =============
     else if (subCommand === "طرد" || subCommand === "kick") {
         let targetID = null;
         let targetName = "العضو";
@@ -107,7 +244,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
         }
     }
     
-    
+    // ============= إضافة =============
     else if (subCommand === "اضافة" || subCommand === "add") {
         let targetID = null;
         
@@ -131,7 +268,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
         }
     }
     
-   
+    // ============= ترقية =============
     else if (subCommand === "ارفع" || subCommand === "promote") {
         let targetID = null;
         let targetName = "العضو";
@@ -165,7 +302,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
         }
     }
     
-    
+    // ============= تنزيل =============
     else if (subCommand === "ازالة" || subCommand === "demote") {
         let targetID = null;
         let targetName = "العضو";
@@ -199,26 +336,29 @@ module.exports.HakimRun = async function({ api, event, args }) {
         }
     }
     
-    
+    // ============= قفل (تحت التطوير) =============
     else if (subCommand === "قفل" || subCommand === "lock") {
         return api.sendMessage("🔒 تم قفل المجموعة (الميزة قيد التطوير)", threadID, messageID);
     }
     
-    
+    // ============= فتح (تحت التطوير) =============
     else if (subCommand === "فتح" || subCommand === "unlock") {
         return api.sendMessage("🔓 تم فتح المجموعة (الميزة قيد التطوير)", threadID, messageID);
     }
     
-    
+    // ============= معلومات المجموعة =============
     else if (subCommand === "عرض" || subCommand === "info") {
         try {
             const threadInfo = await api.getThreadInfo(threadID);
+            const bannedCount = userData.getLocalBannedList(threadID).length;
+            
             const msg = 
 `╭━━━━━[ معلومات المجموعة ]━━━━━╮
 │  الاسم: ${threadInfo.name}
 │  المعرف: ${threadID}
 │  الأعضاء: ${threadInfo.participantIDs.length}
 │  الأدمن: ${threadInfo.adminIDs.length}
+│  محظورين: ${bannedCount}
 │ ${threadInfo.emoji ? ` الإيموجي: ${threadInfo.emoji}\n│ ` : ""}
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`;
             
@@ -228,7 +368,7 @@ module.exports.HakimRun = async function({ api, event, args }) {
         }
     }
     
-  
+    // ============= كنية =============
     else if (subCommand === "كنية" || subCommand === "nick") {
         let targetID = null;
         let nickname = "";
@@ -258,8 +398,8 @@ module.exports.HakimRun = async function({ api, event, args }) {
             return api.sendMessage("❌ فشل تغيير الكنية", threadID, messageID); 
         }
     }
-
     
+    // ============= كنية الكل =============
     else if (subCommand === "كنية-الكل" || subCommand === "nickall") {
         const pattern = args.slice(1).join(" ");
         if (!pattern) {
@@ -297,8 +437,8 @@ module.exports.HakimRun = async function({ api, event, args }) {
             return api.sendMessage("❌ فشل تنفيذ الأمر الجماعي", threadID, messageID); 
         }
     }
-
     
+    // ============= قائمة المساعدة =============
     else {
         const msg = 
 `╭━━━━━[ إدارة المجموعة ]━━━━━╮
@@ -313,9 +453,13 @@ module.exports.HakimRun = async function({ api, event, args }) {
 │ ◆ عرض - معلومات المجموعة
 │ ◆ كنية [@منشن|رد] [الكنية] - كنية
 │ ◆ كنية-الكل [النمط] - كنية الجميع
+│ ◆ حظر [@منشن|رد|معرف] [سبب] - حظر عضو
+│ ◆ الغاء_حظر [@منشن|معرف] - إلغاء حظر
+│ ◆ محظورين - عرض المحظورين
 │
 │ ※ أمثلة:
-│ مجموعة كنية @العضو ملك
+│ مجموعة حظر @العضو سب الشتائم
+│ مجموعة الغاء_حظر @العضو
 │ مجموعة كنية-الكل ٭ [جنس] ✗ [اسم] ٭
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━╯`;
         
