@@ -24,3 +24,8 @@
 | <a href="https://www.facebook.com/Hakim.Tracks.Ch"><img src="https://i.postimg.cc/fyLsTW4T/qr-code-(2).png" /></a>
 
 
+## شرح تشغيل البوت
+- [اضغط هنا](https://drive.google.com/file/d/1n1ThWotSzENsJ3y3mlLXsCtK27txkqFL/view?usp=sharing)  
+
+## الروابط 
+- [اضغط هنا](https://www.mediafire.com/file/gqhdinixjl6q6hl/Links.txt/file) 
