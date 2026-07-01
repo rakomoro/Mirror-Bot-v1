@@ -1,6 +1,6 @@
 # Mirror Bot 
 # Developed By Hakim Tracks 
-![Mirror Bot Agent](https://i.imgur.com/aAO58sQ.jpeg)
+![Mirror Bot Agent](https://i.imgur.com/JAsssqg.jpeg)
 
 ## معلومات البوت
 - **اسم البوت:** Mirror Bot
@@ -29,3 +29,4 @@
 
 ## الروابط 
 - [اضغط هنا](https://www.mediafire.com/file/gqhdinixjl6q6hl/Links.txt/file) 
+
